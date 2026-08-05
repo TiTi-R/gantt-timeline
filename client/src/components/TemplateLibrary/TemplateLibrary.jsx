@@ -342,7 +342,6 @@ export default function TemplateLibrary() {
                         <span className="text-xs text-gray-400 cursor-pointer hover:text-blue-600 shrink-0 mr-2"
                           onClick={e=>{e.stopPropagation();setEditingDurationId(task.id);setEditDurationValue(String(task.duration_days||1));}} title="点击编辑工期">{task.duration_days||1}d</span>
                       )}
-                      <span className="text-xs text-gray-400 w-24 text-right mr-3 shrink-0">Day {(task.relative_start||0)+1} ~ {(task.relative_end||0)+1}</span>
                       {msOptions.length>0&&(
                         <select value={task.parent_id||''} onClick={e=>e.stopPropagation()} onChange={e=>handleRestructure(task,'move',e.target.value?Number(e.target.value):null)}
                           className="text-xs border rounded px-1 py-0.5 mr-1 opacity-0 group-hover:opacity-100 bg-white">
