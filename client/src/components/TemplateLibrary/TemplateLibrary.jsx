@@ -192,14 +192,16 @@ export default function TemplateLibrary() {
                   {msOptions.map(m=><option key={m.id} value={m.id}>◆ {m.name}</option>)}
                 </select></div>
               )}
-              <div className={msOptions.length>0&&editorForm.taskType==='task'?'col-span-4':'col-span-5'}>
+              <div className={editorForm.taskType==='milestone'?'col-span-9':(msOptions.length>0?'col-span-4':'col-span-5')}>
                 <input className="w-full border rounded-lg px-3 py-1.5 text-sm" value={editorForm.name} onChange={e=>setEditorForm({...editorForm,name:e.target.value})}
                   placeholder={editorForm.taskType==='milestone'?'阶段名称':'任务名称'} onKeyDown={e=>{if(e.key==='Enter')handleAddTask();}}/>
               </div>
-              <div className="col-span-2">
-                <input type="number" min={0} className="w-full border rounded-lg px-2 py-1.5 text-sm" value={editorForm.duration_days}
-                  onChange={e=>setEditorForm({...editorForm,duration_days:e.target.value})}/>
-              </div>
+              {editorForm.taskType==='task'&&(
+                <div className="col-span-2">
+                  <input type="number" min={0} className="w-full border rounded-lg px-2 py-1.5 text-sm" value={editorForm.duration_days}
+                    onChange={e=>setEditorForm({...editorForm,duration_days:e.target.value})}/>
+                </div>
+              )}
               <div className="col-span-1">
                 <button onClick={handleAddTask} disabled={addingTask||!editorForm.name.trim()}
                   className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 disabled:opacity-50 font-bold">+</button>
