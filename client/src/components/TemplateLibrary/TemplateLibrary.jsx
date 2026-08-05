@@ -24,6 +24,8 @@ export default function TemplateLibrary() {
   const [editingName, setEditingName] = useState(false);
   const [editNameValue, setEditNameValue] = useState('');
   const [editDesc, setEditDesc] = useState('');
+  const [editingTaskNameId, setEditingTaskNameId] = useState(null);
+  const [editTaskNameValue, setEditTaskNameValue] = useState('');
 
   useEffect(() => { loadData(); }, []);
 
@@ -59,6 +61,20 @@ export default function TemplateLibrary() {
       else if(action==='move'){await updateTemplateTask(editingTemplate.id,task.id,{parent_id:payload||null});}
       refreshTemplate(editingTemplate.id);
     }catch(e){alert(e.message)}
+  };
+
+  const handleTaskNameSave = async (task) => {
+    if (!editingTemplate || !task) return;
+    const newName = editTaskNameValue.trim();
+    if (!newName) { setEditingTaskNameId(null); return; }
+    try {
+      await updateTemplateTask(editingTemplate.id, task.id, { name: newName });
+      await refreshTemplate(editingTemplate.id, false);
+    } catch (e) {
+      alert(e.response?.data?.error || e.message);
+    } finally {
+      setEditingTaskNameId(null);
+    }
   };
 
   // Swap two tasks — recompute group from latest state each time
@@ -194,16 +210,46 @@ export default function TemplateLibrary() {
                   const children = getChildren(m.id);
                   const msLeft=(m.relative_start||0)*32, msDur=m.duration_days||0, msWidth=msDur>0?Math.max(32,msDur*32):0;
                   return (<div key={m.id} className="mb-3"><div className="flex items-center mb-0.5 py-0.5">
-                    <span className="text-xs font-bold text-amber-700 shrink-0 w-52 pl-1 truncate">◆ {m.name}</span>
+                    <span className="text-xs font-bold text-amber-700 shrink-0 w-52 pl-1 truncate">
+                      {editingTaskNameId===m.id?(
+                        <input className="w-full text-xs font-bold outline-none bg-white border border-amber-300 rounded px-1"
+                          value={editTaskNameValue} onChange={e=>setEditTaskNameValue(e.target.value)}
+                          onBlur={()=>handleTaskNameSave(m)} onKeyDown={e=>{if(e.key==='Enter')e.target.blur();if(e.key==='Escape')setEditingTaskNameId(null);}}
+                          autoFocus onClick={e=>e.stopPropagation()}/>
+                      ):(
+                        <span className="cursor-pointer hover:text-blue-600"
+                          onDoubleClick={e=>{e.stopPropagation();setEditingTaskNameId(m.id);setEditTaskNameValue(m.name);}} title="双击编辑名称">◆ {m.name}</span>
+                      )}
+                    </span>
                     <div className="flex-1 relative h-6">
                       {msDur>0&&(<div className="absolute rounded-md h-5 flex items-center px-2 text-xs text-white font-medium truncate" style={{left:msLeft,width:msWidth,background:'linear-gradient(90deg,#f59e0b,#fbbf24)'}}>{msDur}d</div>)}
                       {msDur===0&&(<div className="absolute top-0.5" style={{left:msLeft}}><span className="text-amber-500 text-sm">◆</span></div>)}
                     </div>
                   </div>
-                  {children.map(child=>{const l=(child.relative_start||0)*32,w=Math.max(32,(child.duration_days||1)*32);return(<div key={child.id} className="flex items-center mb-0.5 py-0.5"><div className="w-52 text-xs text-gray-600 truncate pr-2 shrink-0 pl-3">↳ {child.name}</div><div className="flex-1 relative h-5"><div className="absolute rounded-full h-5 flex items-center px-2 text-xs text-white truncate" style={{left:l,width:w,background:child.color||'#4472C4'}}>{child.duration_days}d</div></div></div>)})}
+                  {children.map(child=>{const l=(child.relative_start||0)*32,w=Math.max(32,(child.duration_days||1)*32);return(<div key={child.id} className="flex items-center mb-0.5 py-0.5"><div className="w-52 text-xs text-gray-600 truncate pr-2 shrink-0 pl-3">
+                        {editingTaskNameId===child.id?(
+                          <input className="w-full text-xs outline-none bg-white border border-blue-300 rounded px-1"
+                            value={editTaskNameValue} onChange={e=>setEditTaskNameValue(e.target.value)}
+                            onBlur={()=>handleTaskNameSave(child)} onKeyDown={e=>{if(e.key==='Enter')e.target.blur();if(e.key==='Escape')setEditingTaskNameId(null);}}
+                            autoFocus onClick={e=>e.stopPropagation()}/>
+                        ):(
+                          <span className="cursor-pointer hover:text-blue-600"
+                            onDoubleClick={e=>{e.stopPropagation();setEditingTaskNameId(child.id);setEditTaskNameValue(child.name);}} title="双击编辑名称">↳ {child.name}</span>
+                        )}
+                      </div><div className="flex-1 relative h-5"><div className="absolute rounded-full h-5 flex items-center px-2 text-xs text-white truncate" style={{left:l,width:w,background:child.color||'#4472C4'}}>{child.duration_days}d</div></div></div>)})}
                   </div>);
                 })}
-                {orphans.length>0&&orphans.map(task=>{const l=(task.relative_start||0)*32,w=Math.max(32,(task.duration_days||1)*32);return(<div key={task.id} className="flex items-center mb-0.5 py-0.5"><div className="w-52 text-xs text-gray-700 truncate pr-2 shrink-0">{task.name}</div><div className="flex-1 relative h-5"><div className="absolute rounded-full h-5 flex items-center px-2 text-xs text-white truncate" style={{left:l,width:w,background:task.color||'#8b5cf6'}}>{task.duration_days}d</div></div></div>)})}
+                {orphans.length>0&&orphans.map(task=>{const l=(task.relative_start||0)*32,w=Math.max(32,(task.duration_days||1)*32);return(<div key={task.id} className="flex items-center mb-0.5 py-0.5"><div className="w-52 text-xs text-gray-700 truncate pr-2 shrink-0">
+                        {editingTaskNameId===task.id?(
+                          <input className="w-full text-xs outline-none bg-white border border-purple-300 rounded px-1"
+                            value={editTaskNameValue} onChange={e=>setEditTaskNameValue(e.target.value)}
+                            onBlur={()=>handleTaskNameSave(task)} onKeyDown={e=>{if(e.key==='Enter')e.target.blur();if(e.key==='Escape')setEditingTaskNameId(null);}}
+                            autoFocus onClick={e=>e.stopPropagation()}/>
+                        ):(
+                          <span className="cursor-pointer hover:text-blue-600"
+                            onDoubleClick={e=>{e.stopPropagation();setEditingTaskNameId(task.id);setEditTaskNameValue(task.name);}} title="双击编辑名称">{task.name}</span>
+                        )}
+                      </div><div className="flex-1 relative h-5"><div className="absolute rounded-full h-5 flex items-center px-2 text-xs text-white truncate" style={{left:l,width:w,background:task.color||'#8b5cf6'}}>{task.duration_days}d</div></div></div>)})}
                 {tasks.length===0&&<p className="text-sm text-gray-400 text-center py-8">暂无任务</p>}
               </div>
             </div>
@@ -225,7 +271,15 @@ export default function TemplateLibrary() {
                       {/* ↑↓ buttons */}
                       <OrderButtons task={m} onUp={swapUp} onDown={swapDown}/>
                       <span className="text-amber-500 font-bold text-sm shrink-0 mr-2">◆</span>
-                      <span className="flex-1 text-sm font-medium text-amber-800 truncate">{m.name}</span>
+                      {editingTaskNameId===m.id?(
+                        <input className="flex-1 text-sm font-medium outline-none bg-white border border-amber-300 rounded px-1.5"
+                          value={editTaskNameValue} onChange={e=>setEditTaskNameValue(e.target.value)}
+                          onBlur={()=>handleTaskNameSave(m)} onKeyDown={e=>{if(e.key==='Enter')e.target.blur();if(e.key==='Escape')setEditingTaskNameId(null);}}
+                          autoFocus onClick={e=>e.stopPropagation()}/>
+                      ):(
+                        <span className="flex-1 text-sm font-medium text-amber-800 truncate cursor-pointer hover:text-blue-600"
+                          onDoubleClick={e=>{e.stopPropagation();setEditingTaskNameId(m.id);setEditTaskNameValue(m.name);}} title="双击编辑名称">{m.name}</span>
+                      )}
                       {children.length>0&&<span className="text-xs text-amber-400 mr-3">· {children.length} 子任务</span>}
                       <span className="text-xs bg-amber-100 text-amber-600 px-1.5 rounded mr-2">里程碑</span>
                       <button className="text-xs text-gray-400 hover:text-gray-700 opacity-0 group-hover:opacity-100 mr-1" onClick={e=>{e.stopPropagation();handleRestructure(m,'convert');}}>🔄</button>
@@ -235,7 +289,15 @@ export default function TemplateLibrary() {
                     {children.map(child=>(
                         <div key={`slot-${child.id}`} className="flex items-center px-4 py-2 pl-10 group hover:bg-blue-50/50 border-t border-gray-50 select-none">
                           <OrderButtons task={child} onUp={swapUp} onDown={swapDown}/>
-                          <span className="flex-1 text-sm text-gray-700 truncate">↳ {child.name}</span>
+                          {editingTaskNameId===child.id?(
+                            <input className="flex-1 text-sm outline-none bg-white border border-blue-300 rounded px-1.5"
+                              value={editTaskNameValue} onChange={e=>setEditTaskNameValue(e.target.value)}
+                              onBlur={()=>handleTaskNameSave(child)} onKeyDown={e=>{if(e.key==='Enter')e.target.blur();if(e.key==='Escape')setEditingTaskNameId(null);}}
+                              autoFocus onClick={e=>e.stopPropagation()}/>
+                          ):(
+                            <span className="flex-1 text-sm text-gray-700 truncate cursor-pointer hover:text-blue-600"
+                              onDoubleClick={e=>{e.stopPropagation();setEditingTaskNameId(child.id);setEditTaskNameValue(child.name);}} title="双击编辑名称">↳ {child.name}</span>
+                          )}
                           <span className="text-xs text-gray-400 w-24 text-right mr-3">Day {(child.relative_start||0)+1} ~ {(child.relative_end||0)+1}</span>
                           <select value={child.parent_id||''} onClick={e=>e.stopPropagation()} onChange={e=>handleRestructure(child,'move',e.target.value?Number(e.target.value):null)}
                             className="text-xs border rounded px-1 py-0.5 mr-1 opacity-0 group-hover:opacity-100 bg-white">
@@ -258,7 +320,15 @@ export default function TemplateLibrary() {
                   {orphans.map(task=>(
                     <div key={`slot-${task.id}`} className="flex items-center px-4 py-2 group hover:bg-purple-50/50 border-t border-gray-50 select-none">
                       <OrderButtons task={task} onUp={swapUp} onDown={swapDown}/>
-                      <span className="flex-1 text-sm text-gray-700 truncate">{task.name}</span>
+                      {editingTaskNameId===task.id?(
+                        <input className="flex-1 text-sm outline-none bg-white border border-purple-300 rounded px-1.5"
+                          value={editTaskNameValue} onChange={e=>setEditTaskNameValue(e.target.value)}
+                          onBlur={()=>handleTaskNameSave(task)} onKeyDown={e=>{if(e.key==='Enter')e.target.blur();if(e.key==='Escape')setEditingTaskNameId(null);}}
+                          autoFocus onClick={e=>e.stopPropagation()}/>
+                      ):(
+                        <span className="flex-1 text-sm text-gray-700 truncate cursor-pointer hover:text-blue-600"
+                          onDoubleClick={e=>{e.stopPropagation();setEditingTaskNameId(task.id);setEditTaskNameValue(task.name);}} title="双击编辑名称">{task.name}</span>
+                      )}
                       <span className="text-xs text-gray-400 w-24 text-right mr-3">Day {(task.relative_start||0)+1} ~ {(task.relative_end||0)+1}</span>
                       {msOptions.length>0&&(
                         <select value={task.parent_id||''} onClick={e=>e.stopPropagation()} onChange={e=>handleRestructure(task,'move',e.target.value?Number(e.target.value):null)}
