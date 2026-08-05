@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>DnD Test</title></head>
+<body>
+<h2>拖拽测试 — 按住灰块拖到另一个灰块上</h2>
+<style>.box{display:flex;align-items:center;padding:10px;margin:4px;border:1px solid #ccc;border-radius:6px;}
+.handle{width:20px;height:20px;background:#999;margin-right:12px;cursor:grab;border-radius:4px;padding:0 4px;color:white;font-size:14px;user-select:none;}
+.handle:active{cursor:grabbing;}
+</style>
+<div id="app"></div>
+<script>
+let dragItem=null;
+const items=[{id:1,name:'里程碑A'},{id:2,name:'里程碑B'},{id:3,name:'里程碑C'}];
+function render(){
+  app.innerHTML=items.map((t,i)=>`<div class="box" data-idx="${i}">
+    <span class="handle" draggable="true" data-id="${t.id}">⠿</span>
+    ◆ ${t.name}
+  </div>`).join('');
+  document.querySelectorAll('.handle').forEach(h=>{
+    h.addEventListener('dragstart',e=>{dragItem=items.find(t=>t.id===+e.target.dataset.id);console.log('dragstart',dragItem.name);e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain','x');});
+    h.addEventListener('dragend',()=>{dragItem=null;console.log('dragend')});
+  });
+  document.querySelectorAll('.box').forEach(b=>{
+    b.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='move';});
+    b.addEventListener('drop',e=>{
+      e.preventDefault();
+      const idx=+b.dataset.idx;
+      const di=dragItem; if(!di||di.id===items[idx].id)return;
+      console.log('drop',di.name,'->',items[idx].name);
+      const without=items.filter(t=>t.id!==di.id);
+      const targetIdx=without.findIndex(t=>t.id===items[idx].id);
+      items.splice(0,items.length,...without.slice(0,targetIdx),di,...without.slice(targetIdx));
+      render();
+    });
+  });
+}
+render();
+</script>
+</body></html>

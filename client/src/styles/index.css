@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+/* dhtmlx-gantt overrides */
+.gantt_container {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-family: inherit;
+}
+
+.gantt_grid_scale, .gantt_task_scale {
+  background-color: #f8fafc !important;
+  border-bottom: 2px solid #e2e8f0 !important;
+}
+
+.gantt_grid_data {
+  background-color: #ffffff;
+}
+
+.gantt_task_row {
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.gantt_task_cell {
+  border-right: 1px solid #f1f5f9;
+}
+
+/* Phase colors */
+.gantt_selected {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+}
+
+/* Toast styles */
+.toast-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 9999;
+}
+
+/* Smooth transitions */
+* {
+  transition: background-color 0.15s, border-color 0.15s;
+}

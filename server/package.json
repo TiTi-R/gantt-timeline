@@ -1,0 +1,22 @@
+{
+  "name": "gantt-timeline-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "seed": "node db/seed.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "express-async-errors": "^3.1.1",
+    "joi": "^17.13.0",
+    "sql.js": "^1.12.0"
+  },
+  "optionalDependencies": {
+    "exceljs": "^4.4.0",
+    "puppeteer": "^23.0.0"
+  }
+}
