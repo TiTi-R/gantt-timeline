@@ -266,15 +266,7 @@ export default function TemplateLibrary() {
                         <span className="flex-1 text-sm font-medium text-amber-800 truncate cursor-pointer hover:text-blue-600"
                           onClick={e=>{e.stopPropagation();setEditingTaskNameId(m.id);setEditTaskNameValue(m.name);}} title="点击编辑名称">{m.name}</span>
                       )}
-                      {editingDurationId===m.id?(
-                        <input type="number" min={0} className="w-14 px-1 text-xs outline-none bg-white border border-amber-300 rounded text-center shrink-0"
-                          value={editDurationValue} onChange={e=>setEditDurationValue(e.target.value)}
-                          onBlur={()=>handleDurationSave(m)} onKeyDown={e=>{if(e.key==='Enter')e.target.blur();if(e.key==='Escape')setEditingDurationId(null);}}
-                          autoFocus onClick={e=>e.stopPropagation()}/>
-                      ):(
-                        <span className="text-xs text-gray-400 cursor-pointer hover:text-blue-600 shrink-0 mr-2"
-                          onClick={e=>{e.stopPropagation();setEditingDurationId(m.id);setEditDurationValue(String(m.duration_days||0));}} title="点击编辑工期">{m.duration_days||0}d</span>
-                      )}
+                      <span className="text-xs text-gray-400 shrink-0 mr-2">{children.reduce((s,c)=>s+(c.duration_days||0),0)}d</span>
                       {children.length>0&&<span className="text-xs text-amber-400 mr-3">· {children.length} 子任务</span>}
                       <span className="text-xs bg-amber-100 text-amber-600 px-1.5 rounded mr-2">里程碑</span>
                       <button className="text-xs text-gray-400 hover:text-gray-700 opacity-0 group-hover:opacity-100 mr-1" onClick={e=>{e.stopPropagation();handleRestructure(m,'convert');}}>🔄</button>

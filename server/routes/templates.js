@@ -219,25 +219,24 @@ function autoSchedule(db, templateId) {
 
   // Each milestone starts at Day 0 (parallel)
   milestones.forEach(m => {
-    let day = 0;
-    const msDuration = m.duration_days || 0;
+    // Children chain sequentially within this milestone
+    const children = getChildren(m.id);
+    // Milestone duration = sum of all children's durations
+    const msDuration = children.reduce((sum, c) => sum + Math.max(1, c.duration_days || 1), 0);
 
     if (msDuration > 0) {
       updateTask.run(0, msDuration - 1, msDuration, m.id);
-      day += msDuration;
     } else {
       updateTask.run(0, 0, 0, m.id);
     }
 
-    // Children chain sequentially within this milestone
-    const children = getChildren(m.id);
     let childDay = 0;
     children.forEach(c => {
       const dur = Math.max(1, c.duration_days || 1);
       updateTask.run(childDay, childDay + dur - 1, dur, c.id);
       childDay += dur;
     });
-    maxEnd = Math.max(maxEnd, msDuration > 0 ? msDuration : childDay);
+    maxEnd = Math.max(maxEnd, msDuration);
   });
 
   // Orphans after the last milestone's end
