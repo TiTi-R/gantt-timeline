@@ -26,6 +26,8 @@ export default function TemplateLibrary() {
   const [editDesc, setEditDesc] = useState('');
   const [editingTaskNameId, setEditingTaskNameId] = useState(null);
   const [editTaskNameValue, setEditTaskNameValue] = useState('');
+  const [editingDurationId, setEditingDurationId] = useState(null);
+  const [editDurationValue, setEditDurationValue] = useState('');
 
   useEffect(() => { loadData(); }, []);
 
@@ -74,6 +76,20 @@ export default function TemplateLibrary() {
       alert(e.response?.data?.error || e.message);
     } finally {
       setEditingTaskNameId(null);
+    }
+  };
+
+  const handleDurationSave = async (task) => {
+    if (!editingTemplate || !task) return;
+    const newDur = Number(editDurationValue);
+    if (isNaN(newDur) || newDur < 0) { setEditingDurationId(null); return; }
+    try {
+      await updateTemplateTask(editingTemplate.id, task.id, { duration_days: newDur });
+      await refreshTemplate(editingTemplate.id, false);
+    } catch (e) {
+      alert(e.response?.data?.error || e.message);
+    } finally {
+      setEditingDurationId(null);
     }
   };
 
@@ -250,6 +266,15 @@ export default function TemplateLibrary() {
                         <span className="flex-1 text-sm font-medium text-amber-800 truncate cursor-pointer hover:text-blue-600"
                           onClick={e=>{e.stopPropagation();setEditingTaskNameId(m.id);setEditTaskNameValue(m.name);}} title="点击编辑名称">{m.name}</span>
                       )}
+                      {editingDurationId===m.id?(
+                        <input type="number" min={0} className="w-14 px-1 text-xs outline-none bg-white border border-amber-300 rounded text-center shrink-0"
+                          value={editDurationValue} onChange={e=>setEditDurationValue(e.target.value)}
+                          onBlur={()=>handleDurationSave(m)} onKeyDown={e=>{if(e.key==='Enter')e.target.blur();if(e.key==='Escape')setEditingDurationId(null);}}
+                          autoFocus onClick={e=>e.stopPropagation()}/>
+                      ):(
+                        <span className="text-xs text-gray-400 cursor-pointer hover:text-blue-600 shrink-0 mr-2"
+                          onClick={e=>{e.stopPropagation();setEditingDurationId(m.id);setEditDurationValue(String(m.duration_days||0));}} title="点击编辑工期">{m.duration_days||0}d</span>
+                      )}
                       {children.length>0&&<span className="text-xs text-amber-400 mr-3">· {children.length} 子任务</span>}
                       <span className="text-xs bg-amber-100 text-amber-600 px-1.5 rounded mr-2">里程碑</span>
                       <button className="text-xs text-gray-400 hover:text-gray-700 opacity-0 group-hover:opacity-100 mr-1" onClick={e=>{e.stopPropagation();handleRestructure(m,'convert');}}>🔄</button>
@@ -267,6 +292,15 @@ export default function TemplateLibrary() {
                           ):(
                             <span className="flex-1 text-sm text-gray-700 truncate cursor-pointer hover:text-blue-600"
                               onClick={e=>{e.stopPropagation();setEditingTaskNameId(child.id);setEditTaskNameValue(child.name);}} title="点击编辑名称">↳ {child.name}</span>
+                          )}
+                          {editingDurationId===child.id?(
+                            <input type="number" min={1} className="w-14 px-1 text-xs outline-none bg-white border border-blue-300 rounded text-center shrink-0"
+                              value={editDurationValue} onChange={e=>setEditDurationValue(e.target.value)}
+                              onBlur={()=>handleDurationSave(child)} onKeyDown={e=>{if(e.key==='Enter')e.target.blur();if(e.key==='Escape')setEditingDurationId(null);}}
+                              autoFocus onClick={e=>e.stopPropagation()}/>
+                          ):(
+                            <span className="text-xs text-gray-400 cursor-pointer hover:text-blue-600 shrink-0 mr-2"
+                              onClick={e=>{e.stopPropagation();setEditingDurationId(child.id);setEditDurationValue(String(child.duration_days||1));}} title="点击编辑工期">{child.duration_days||1}d</span>
                           )}
                           <span className="text-xs text-gray-400 w-24 text-right mr-3">Day {(child.relative_start||0)+1} ~ {(child.relative_end||0)+1}</span>
                           <select value={child.parent_id||''} onClick={e=>e.stopPropagation()} onChange={e=>handleRestructure(child,'move',e.target.value?Number(e.target.value):null)}
@@ -298,6 +332,15 @@ export default function TemplateLibrary() {
                       ):(
                         <span className="flex-1 text-sm text-gray-700 truncate cursor-pointer hover:text-blue-600"
                           onClick={e=>{e.stopPropagation();setEditingTaskNameId(task.id);setEditTaskNameValue(task.name);}} title="点击编辑名称">{task.name}</span>
+                      )}
+                      {editingDurationId===task.id?(
+                        <input type="number" min={1} className="w-14 px-1 text-xs outline-none bg-white border border-purple-300 rounded text-center shrink-0"
+                          value={editDurationValue} onChange={e=>setEditDurationValue(e.target.value)}
+                          onBlur={()=>handleDurationSave(task)} onKeyDown={e=>{if(e.key==='Enter')e.target.blur();if(e.key==='Escape')setEditingDurationId(null);}}
+                          autoFocus onClick={e=>e.stopPropagation()}/>
+                      ):(
+                        <span className="text-xs text-gray-400 cursor-pointer hover:text-blue-600 shrink-0 mr-2"
+                          onClick={e=>{e.stopPropagation();setEditingDurationId(task.id);setEditDurationValue(String(task.duration_days||1));}} title="点击编辑工期">{task.duration_days||1}d</span>
                       )}
                       <span className="text-xs text-gray-400 w-24 text-right mr-3">Day {(task.relative_start||0)+1} ~ {(task.relative_end||0)+1}</span>
                       {msOptions.length>0&&(
