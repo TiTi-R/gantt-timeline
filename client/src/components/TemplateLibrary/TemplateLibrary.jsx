@@ -265,7 +265,7 @@ export default function TemplateLibrary() {
           {/* Task list with ↑↓ reorder */}
           <div>
             <h4 className="font-medium text-gray-700 text-sm mb-3">任务清单 ({tasks.length}) — ↑↓ 排序 · 转换 · 移动</h4>
-            <div className="bg-white border rounded-xl">
+            <div className="bg-white border rounded-xl overflow-hidden">
               {tasks.length===0&&<div className="text-sm text-gray-400 text-center py-12">暂无任务</div>}
 
               {/* Column header */}
@@ -305,7 +305,7 @@ export default function TemplateLibrary() {
                           {getTaskRoles(m).length>0 ? getTaskRoles(m).join(',') : ''}
                         </button>
                         {openResourcePicker===m.id && (
-                          <div className="absolute z-20 top-full mt-0.5 left-0 bg-white border rounded-lg shadow-lg p-2 w-44" onClick={e=>e.stopPropagation()}>
+                          <div className="absolute z-20 bottom-full mb-0.5 right-0 bg-white border rounded-lg shadow-lg p-2 w-44" onClick={e=>e.stopPropagation()}>
                             <div className="max-h-40 overflow-auto">
                               {roleNames.map(role=>(
                                 <label key={role} className="flex items-center gap-2 px-2 py-1 hover:bg-gray-50 rounded text-xs cursor-pointer">
@@ -355,7 +355,7 @@ export default function TemplateLibrary() {
                               {(()=>{const roles=getTaskRoles(child);return roles.length>0?roles.join(','):'';})()}
                             </button>
                             {openResourcePicker===child.id && (
-                              <div className="absolute z-20 top-full mt-0.5 left-0 bg-white border rounded-lg shadow-lg p-2 w-44" onClick={e=>e.stopPropagation()}>
+                              <div className="absolute z-20 bottom-full mb-0.5 right-0 bg-white border rounded-lg shadow-lg p-2 w-44" onClick={e=>e.stopPropagation()}>
                                 <div className="max-h-40 overflow-auto">
                                   {roleNames.map(role=>(
                                     <label key={role} className="flex items-center gap-2 px-2 py-1 hover:bg-gray-50 rounded text-xs cursor-pointer">
@@ -415,7 +415,7 @@ export default function TemplateLibrary() {
                           {getTaskRoles(task).length>0 ? getTaskRoles(task).join(',') : ''}
                         </button>
                         {openResourcePicker===task.id && (
-                          <div className="absolute z-20 top-full mt-0.5 left-0 bg-white border rounded-lg shadow-lg p-2 w-44" onClick={e=>e.stopPropagation()}>
+                          <div className="absolute z-20 bottom-full mb-0.5 right-0 bg-white border rounded-lg shadow-lg p-2 w-44" onClick={e=>e.stopPropagation()}>
                             <div className="max-h-40 overflow-auto">
                               {roleNames.map(role=>(
                                 <label key={role} className="flex items-center gap-2 px-2 py-1 hover:bg-gray-50 rounded text-xs cursor-pointer">
