@@ -316,16 +316,16 @@ export default function TemplateLibrary() {
                               onClick={e=>{e.stopPropagation();setEditingDurationId(child.id);setEditDurationValue(String(child.duration_days||1));}} title="点击编辑工期">{child.duration_days||1}d</span>
                           )}
                           <span className="text-xs text-gray-400 w-24 text-right mr-3 shrink-0">Day {(child.relative_start||0)+1} ~ {(child.relative_end||0)+1}</span>
+                          <select value={child.parent_id||''} onClick={e=>e.stopPropagation()} onChange={e=>handleRestructure(child,'move',e.target.value?Number(e.target.value):null)}
+                            className="text-xs border rounded px-1 py-0.5 mr-1 opacity-0 group-hover:opacity-100 bg-white">
+                            <option value="">无归属</option>
+                            {msOptions.filter(m2=>m2.id!==child.id).map(m2=><option key={m2.id} value={m2.id}>◆ {m2.name}</option>)}
+                          </select>
                           <select className="text-xs border rounded px-1 py-0.5 mr-1 max-w-[100px] truncate bg-white"
                             value={child.resource_names||m.resource_names||''} onClick={e=>e.stopPropagation()}
                             onChange={e=>handleResourceChange(child, e.target.value)}>
                             <option value=""></option>
                             {roleNames.map(role=><option key={role} value={role}>{role}</option>)}
-                          </select>
-                          <select value={child.parent_id||''} onClick={e=>e.stopPropagation()} onChange={e=>handleRestructure(child,'move',e.target.value?Number(e.target.value):null)}
-                            className="text-xs border rounded px-1 py-0.5 mr-1 opacity-0 group-hover:opacity-100 bg-white">
-                            <option value="">无归属</option>
-                            {msOptions.filter(m2=>m2.id!==child.id).map(m2=><option key={m2.id} value={m2.id}>◆ {m2.name}</option>)}
                           </select>
                           <button className="text-xs text-gray-400 hover:text-amber-600 opacity-0 group-hover:opacity-100 mr-1" onClick={e=>{e.stopPropagation();handleRestructure(child,'convert');}}>🔄</button>
                           <button className="text-xs text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100" onClick={e=>{e.stopPropagation();handleDeleteTask(child.id);}}>✕</button>
@@ -361,12 +361,6 @@ export default function TemplateLibrary() {
                         <span className="text-xs text-gray-400 cursor-pointer hover:text-blue-600 shrink-0 mr-2"
                           onClick={e=>{e.stopPropagation();setEditingDurationId(task.id);setEditDurationValue(String(task.duration_days||1));}} title="点击编辑工期">{task.duration_days||1}d</span>
                       )}
-                      <select className="text-xs border rounded px-1 py-0.5 mr-1 max-w-[100px] truncate bg-white"
-                        value={task.resource_names||''} onClick={e=>e.stopPropagation()}
-                        onChange={e=>handleResourceChange(task, e.target.value)}>
-                        <option value=""></option>
-                        {roleNames.map(role=><option key={role} value={role}>{role}</option>)}
-                      </select>
                       {msOptions.length>0&&(
                         <select value={task.parent_id||''} onClick={e=>e.stopPropagation()} onChange={e=>handleRestructure(task,'move',e.target.value?Number(e.target.value):null)}
                           className="text-xs border rounded px-1 py-0.5 mr-1 opacity-0 group-hover:opacity-100 bg-white">
@@ -374,6 +368,12 @@ export default function TemplateLibrary() {
                           {msOptions.map(m2=><option key={m2.id} value={m2.id}>◆ {m2.name}</option>)}
                         </select>
                       )}
+                      <select className="text-xs border rounded px-1 py-0.5 mr-1 max-w-[100px] truncate bg-white"
+                        value={task.resource_names||''} onClick={e=>e.stopPropagation()}
+                        onChange={e=>handleResourceChange(task, e.target.value)}>
+                        <option value=""></option>
+                        {roleNames.map(role=><option key={role} value={role}>{role}</option>)}
+                      </select>
                       <button className="text-xs text-gray-400 hover:text-amber-600 opacity-0 group-hover:opacity-100 mr-1" onClick={e=>{e.stopPropagation();handleRestructure(task,'convert');}}>🔄</button>
                       <button className="text-xs text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100" onClick={e=>{e.stopPropagation();handleDeleteTask(task.id);}}>✕</button>
                     </div>
