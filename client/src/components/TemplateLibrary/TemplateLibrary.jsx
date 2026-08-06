@@ -299,7 +299,7 @@ export default function TemplateLibrary() {
                       {children.length>0&&<span className="text-xs text-amber-400 mr-3">· {children.length} 子任务</span>}
                       <span className="text-xs bg-amber-100 text-amber-600 px-1.5 rounded mr-2">里程碑</span>
                       <div className="relative shrink-0 mr-1">
-                        <button className="text-xs border rounded px-1 py-0.5 max-w-[100px] truncate overflow-hidden bg-white hover:border-blue-300 min-w-[40px]"
+                        <button className="text-xs border rounded px-1 py-0.5 max-w-[100px] truncate overflow-hidden inline-block bg-white hover:border-blue-300 min-w-[40px] align-middle"
                           onClick={e=>{e.stopPropagation();setOpenResourcePicker(openResourcePicker===m.id?null:m.id);}}>
                           {getTaskRoles(m).length>0 ? getTaskRoles(m).join(',') : ''}
                         </button>
@@ -349,7 +349,7 @@ export default function TemplateLibrary() {
                             {msOptions.filter(m2=>m2.id!==child.id).map(m2=><option key={m2.id} value={m2.id}>◆ {m2.name}</option>)}
                           </select>
                           <div className="relative shrink-0 mr-1">
-                            <button className="text-xs border rounded px-1 py-0.5 max-w-[100px] truncate overflow-hidden bg-white hover:border-blue-300 min-w-[40px]"
+                            <button className="text-xs border rounded px-1 py-0.5 max-w-[100px] truncate overflow-hidden inline-block bg-white hover:border-blue-300 min-w-[40px] align-middle"
                               onClick={e=>{e.stopPropagation();setOpenResourcePicker(openResourcePicker===child.id?null:child.id);}}>
                               {(()=>{const roles=getTaskRoles(child);return roles.length>0?roles.join(','):'';})()}
                             </button>
@@ -409,7 +409,7 @@ export default function TemplateLibrary() {
                         </select>
                       )}
                       <div className="relative shrink-0 mr-1">
-                        <button className="text-xs border rounded px-1 py-0.5 max-w-[100px] truncate overflow-hidden bg-white hover:border-blue-300 min-w-[40px]"
+                        <button className="text-xs border rounded px-1 py-0.5 max-w-[100px] truncate overflow-hidden inline-block bg-white hover:border-blue-300 min-w-[40px] align-middle"
                           onClick={e=>{e.stopPropagation();setOpenResourcePicker(openResourcePicker===task.id?null:task.id);}}>
                           {getTaskRoles(task).length>0 ? getTaskRoles(task).join(',') : ''}
                         </button>
