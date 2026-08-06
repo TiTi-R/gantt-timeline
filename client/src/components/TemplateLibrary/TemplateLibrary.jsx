@@ -265,7 +265,7 @@ export default function TemplateLibrary() {
           {/* Task list with ↑↓ reorder */}
           <div>
             <h4 className="font-medium text-gray-700 text-sm mb-3">任务清单 ({tasks.length}) — ↑↓ 排序 · 转换 · 移动</h4>
-            <div className="bg-white border rounded-xl overflow-hidden">
+            <div className="bg-white border rounded-xl">
               {tasks.length===0&&<div className="text-sm text-gray-400 text-center py-12">暂无任务</div>}
 
               {/* Column header */}
