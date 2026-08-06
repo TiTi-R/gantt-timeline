@@ -30,6 +30,7 @@ export default function TemplateLibrary() {
   const [editingDurationId, setEditingDurationId] = useState(null);
   const [editDurationValue, setEditDurationValue] = useState('');
   const [resources, setResources] = useState([]);
+  const [openResourcePicker, setOpenResourcePicker] = useState(null);
 
   useEffect(() => { loadData(); }, []);
 
@@ -95,10 +96,14 @@ export default function TemplateLibrary() {
     }
   };
 
-  const handleResourceChange = async (task, role) => {
+  const getTaskRoles = (task) => (task.resource_names || '').split(',').filter(Boolean);
+
+  const handleResourceToggle = async (task, role) => {
     if (!editingTemplate || !task) return;
+    const current = getTaskRoles(task);
+    const next = current.includes(role) ? current.filter(r => r !== role) : [...current, role];
     try {
-      await updateTemplateTask(editingTemplate.id, task.id, { resource_names: role || null });
+      await updateTemplateTask(editingTemplate.id, task.id, { resource_names: next.length ? next.join(',') : null });
       await refreshTemplate(editingTemplate.id, false);
     } catch (e) {
       alert(e.response?.data?.error || e.message);
@@ -246,12 +251,12 @@ export default function TemplateLibrary() {
                       {msDur>0&&(<div className="absolute rounded-md h-5 flex items-center px-2 text-xs text-white font-medium truncate" style={{left:msLeft,width:msWidth,background:'linear-gradient(90deg,#f59e0b,#fbbf24)'}}>{msDur}d</div>)}
                       {msDur===0&&(<div className="absolute top-0.5" style={{left:msLeft}}><span className="text-amber-500 text-sm">◆</span></div>)}
                     </div>
-                    <span className="text-xs text-gray-400 shrink-0 ml-2 w-28 truncate">{m.resource_names||''}</span>
+                    <span className="text-xs text-gray-400 shrink-0 ml-2 w-28 truncate">{getTaskRoles(m).join(',')}</span>
                   </div>
-                  {children.map(child=>{const l=(child.relative_start||0)*32,w=Math.max(32,(child.duration_days||1)*32);return(<div key={child.id} className="flex items-center mb-0.5 py-0.5"><div className="w-52 text-xs text-gray-600 truncate pr-2 shrink-0 pl-3">↳ {child.name}</div><div className="flex-1 relative h-5"><div className="absolute rounded-full h-5 flex items-center px-2 text-xs text-white truncate" style={{left:l,width:w,background:child.color||'#4472C4'}}>{child.duration_days}d</div></div><span className="text-xs text-gray-400 shrink-0 ml-2 w-28 truncate">{child.resource_names||m.resource_names||''}</span></div>)})}
+                  {children.map(child=>{const l=(child.relative_start||0)*32,w=Math.max(32,(child.duration_days||1)*32);return(<div key={child.id} className="flex items-center mb-0.5 py-0.5"><div className="w-52 text-xs text-gray-600 truncate pr-2 shrink-0 pl-3">↳ {child.name}</div><div className="flex-1 relative h-5"><div className="absolute rounded-full h-5 flex items-center px-2 text-xs text-white truncate" style={{left:l,width:w,background:child.color||'#4472C4'}}>{child.duration_days}d</div></div><span className="text-xs text-gray-400 shrink-0 ml-2 w-28 truncate">{(()=>{const r=getTaskRoles(child);return r.length?r.join(','):getTaskRoles(m).join(',')})()}</span></div>)})}
                   </div>);
                 })}
-                {orphans.length>0&&orphans.map(task=>{const l=(task.relative_start||0)*32,w=Math.max(32,(task.duration_days||1)*32);return(<div key={task.id} className="flex items-center mb-0.5 py-0.5"><div className="w-52 text-xs text-gray-700 truncate pr-2 shrink-0">{task.name}</div><div className="flex-1 relative h-5"><div className="absolute rounded-full h-5 flex items-center px-2 text-xs text-white truncate" style={{left:l,width:w,background:task.color||'#8b5cf6'}}>{task.duration_days}d</div></div><span className="text-xs text-gray-400 shrink-0 ml-2 w-28 truncate">{task.resource_names||''}</span></div>)})}
+                {orphans.length>0&&orphans.map(task=>{const l=(task.relative_start||0)*32,w=Math.max(32,(task.duration_days||1)*32);return(<div key={task.id} className="flex items-center mb-0.5 py-0.5"><div className="w-52 text-xs text-gray-700 truncate pr-2 shrink-0">{task.name}</div><div className="flex-1 relative h-5"><div className="absolute rounded-full h-5 flex items-center px-2 text-xs text-white truncate" style={{left:l,width:w,background:task.color||'#8b5cf6'}}>{task.duration_days}d</div></div><span className="text-xs text-gray-400 shrink-0 ml-2 w-28 truncate">{getTaskRoles(task).join(',')}</span></div>)})}
                 {tasks.length===0&&<p className="text-sm text-gray-400 text-center py-8">暂无任务</p>}
               </div>
             </div>
@@ -294,12 +299,25 @@ export default function TemplateLibrary() {
                       <span className="text-xs text-gray-400 shrink-0 mr-2">{children.reduce((s,c)=>s+(c.duration_days||0),0)}d</span>
                       {children.length>0&&<span className="text-xs text-amber-400 mr-3">· {children.length} 子任务</span>}
                       <span className="text-xs bg-amber-100 text-amber-600 px-1.5 rounded mr-2">里程碑</span>
-                      <select className="text-xs border rounded px-1 py-0.5 mr-1 max-w-[100px] truncate bg-white"
-                        value={m.resource_names||''} onClick={e=>e.stopPropagation()}
-                        onChange={e=>handleResourceChange(m, e.target.value)}>
-                        <option value=""></option>
-                        {roleNames.map(role=><option key={role} value={role}>{role}</option>)}
-                      </select>
+                      <div className="relative shrink-0 mr-1">
+                        <button className="text-xs border rounded px-1 py-0.5 max-w-[84px] truncate bg-white hover:border-blue-300 min-w-[40px]"
+                          onClick={e=>{e.stopPropagation();setOpenResourcePicker(openResourcePicker===m.id?null:m.id);}}>
+                          {getTaskRoles(m).length>0 ? getTaskRoles(m).join(',') : ''}
+                        </button>
+                        {openResourcePicker===m.id && (
+                          <div className="absolute z-20 top-full mt-0.5 left-0 bg-white border rounded-lg shadow-lg p-2 w-44" onClick={e=>e.stopPropagation()}>
+                            <div className="max-h-40 overflow-auto">
+                              {roleNames.map(role=>(
+                                <label key={role} className="flex items-center gap-2 px-2 py-1 hover:bg-gray-50 rounded text-xs cursor-pointer">
+                                  <input type="checkbox" checked={getTaskRoles(m).includes(role)} onChange={()=>handleResourceToggle(m,role)} className="shrink-0"/>
+                                  {role}
+                                </label>
+                              ))}
+                            </div>
+                            <button className="mt-1 text-xs text-gray-400 hover:text-gray-600 w-full text-center" onClick={()=>setOpenResourcePicker(null)}>关闭</button>
+                          </div>
+                        )}
+                      </div>
                       <button className="text-xs text-gray-400 hover:text-gray-700 opacity-0 group-hover:opacity-100 mr-1" onClick={e=>{e.stopPropagation();handleRestructure(m,'convert');}}>🔄</button>
                       <button className="text-xs text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100" onClick={e=>{e.stopPropagation();handleDeleteTask(m.id);}}>✕</button>
                     </div>
@@ -331,12 +349,25 @@ export default function TemplateLibrary() {
                             <option value="">无归属</option>
                             {msOptions.filter(m2=>m2.id!==child.id).map(m2=><option key={m2.id} value={m2.id}>◆ {m2.name}</option>)}
                           </select>
-                          <select className="text-xs border rounded px-1 py-0.5 mr-1 max-w-[100px] truncate bg-white"
-                            value={child.resource_names||m.resource_names||''} onClick={e=>e.stopPropagation()}
-                            onChange={e=>handleResourceChange(child, e.target.value)}>
-                            <option value=""></option>
-                            {roleNames.map(role=><option key={role} value={role}>{role}</option>)}
-                          </select>
+                          <div className="relative shrink-0 mr-1">
+                            <button className="text-xs border rounded px-1 py-0.5 max-w-[84px] truncate bg-white hover:border-blue-300 min-w-[40px]"
+                              onClick={e=>{e.stopPropagation();setOpenResourcePicker(openResourcePicker===child.id?null:child.id);}}>
+                              {(()=>{const roles=getTaskRoles(child);return roles.length>0?roles.join(','):'';})()}
+                            </button>
+                            {openResourcePicker===child.id && (
+                              <div className="absolute z-20 top-full mt-0.5 left-0 bg-white border rounded-lg shadow-lg p-2 w-44" onClick={e=>e.stopPropagation()}>
+                                <div className="max-h-40 overflow-auto">
+                                  {roleNames.map(role=>(
+                                    <label key={role} className="flex items-center gap-2 px-2 py-1 hover:bg-gray-50 rounded text-xs cursor-pointer">
+                                      <input type="checkbox" checked={getTaskRoles(child).includes(role)} onChange={()=>handleResourceToggle(child,role)} className="shrink-0"/>
+                                      {role}
+                                    </label>
+                                  ))}
+                                </div>
+                                <button className="mt-1 text-xs text-gray-400 hover:text-gray-600 w-full text-center" onClick={()=>setOpenResourcePicker(null)}>关闭</button>
+                              </div>
+                            )}
+                          </div>
                           <button className="text-xs text-gray-400 hover:text-amber-600 opacity-0 group-hover:opacity-100 mr-1" onClick={e=>{e.stopPropagation();handleRestructure(child,'convert');}}>🔄</button>
                           <button className="text-xs text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100" onClick={e=>{e.stopPropagation();handleDeleteTask(child.id);}}>✕</button>
                         </div>
@@ -378,12 +409,25 @@ export default function TemplateLibrary() {
                           {msOptions.map(m2=><option key={m2.id} value={m2.id}>◆ {m2.name}</option>)}
                         </select>
                       )}
-                      <select className="text-xs border rounded px-1 py-0.5 mr-1 max-w-[100px] truncate bg-white"
-                        value={task.resource_names||''} onClick={e=>e.stopPropagation()}
-                        onChange={e=>handleResourceChange(task, e.target.value)}>
-                        <option value=""></option>
-                        {roleNames.map(role=><option key={role} value={role}>{role}</option>)}
-                      </select>
+                      <div className="relative shrink-0 mr-1">
+                        <button className="text-xs border rounded px-1 py-0.5 max-w-[84px] truncate bg-white hover:border-blue-300 min-w-[40px]"
+                          onClick={e=>{e.stopPropagation();setOpenResourcePicker(openResourcePicker===task.id?null:task.id);}}>
+                          {getTaskRoles(task).length>0 ? getTaskRoles(task).join(',') : ''}
+                        </button>
+                        {openResourcePicker===task.id && (
+                          <div className="absolute z-20 top-full mt-0.5 left-0 bg-white border rounded-lg shadow-lg p-2 w-44" onClick={e=>e.stopPropagation()}>
+                            <div className="max-h-40 overflow-auto">
+                              {roleNames.map(role=>(
+                                <label key={role} className="flex items-center gap-2 px-2 py-1 hover:bg-gray-50 rounded text-xs cursor-pointer">
+                                  <input type="checkbox" checked={getTaskRoles(task).includes(role)} onChange={()=>handleResourceToggle(task,role)} className="shrink-0"/>
+                                  {role}
+                                </label>
+                              ))}
+                            </div>
+                            <button className="mt-1 text-xs text-gray-400 hover:text-gray-600 w-full text-center" onClick={()=>setOpenResourcePicker(null)}>关闭</button>
+                          </div>
+                        )}
+                      </div>
                       <button className="text-xs text-gray-400 hover:text-amber-600 opacity-0 group-hover:opacity-100 mr-1" onClick={e=>{e.stopPropagation();handleRestructure(task,'convert');}}>🔄</button>
                       <button className="text-xs text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100" onClick={e=>{e.stopPropagation();handleDeleteTask(task.id);}}>✕</button>
                     </div>
