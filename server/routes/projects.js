@@ -157,6 +157,7 @@ router.get('/:id/gantt-data', (req, res) => {
       real_end: endDate,
       resource_names: t.resource_names || '',
       resource_person_names: t.resource_person_names || '',
+      notes: t.notes || '',
     };
   });
 
