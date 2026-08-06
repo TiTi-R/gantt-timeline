@@ -16,7 +16,12 @@ router.get('/', (req, res) => {
   if (conditions.length) sql += ' WHERE ' + conditions.join(' AND ');
   sql += ' ORDER BY r.name';
 
-  res.json(db.prepare(sql).all(...params));
+  const raw = db.prepare(sql).all(...params);
+  const resources = raw.map(r => ({
+    ...r,
+    members: parseMembers(r.members),
+  }));
+  res.json(resources);
 });
 
 // Create resource
@@ -27,12 +32,13 @@ router.post('/', (req, res) => {
   if (!name) return res.status(400).json({ error: 'Name is required' });
 
   const result = db.prepare(
-    `INSERT INTO resources (name, role, email, department, color, availability)
-     VALUES (?, ?, ?, ?, ?, ?)`
-  ).run(name, role || null, email || null, department || null, color || null, availability ?? 1.0);
+    `INSERT INTO resources (name, role, email, department, color, availability, members)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
+  ).run(name, role || null, email || null, department || null, color || null, availability ?? 1.0,
+    req.body.members ? JSON.stringify(req.body.members) : null);
 
   const resource = db.prepare('SELECT * FROM resources WHERE id = ?').get(result.lastInsertRowid);
-  res.status(201).json(resource);
+  res.status(201).json({ ...resource, members: parseMembers(resource.members) });
 });
 
 // Update resource
@@ -47,10 +53,15 @@ router.patch('/:id', (req, res) => {
   fields.forEach(f => {
     if (req.body[f] !== undefined) { sets.push(`${f} = ?`); values.push(req.body[f]); }
   });
+  if (req.body.members !== undefined) {
+    sets.push('members = ?');
+    values.push(req.body.members ? JSON.stringify(req.body.members) : null);
+  }
   if (!sets.length) return res.json(existing);
 
   db.prepare(`UPDATE resources SET ${sets.join(', ')} WHERE id = ?`).run(...values, req.params.id);
-  res.json(db.prepare('SELECT * FROM resources WHERE id = ?').get(req.params.id));
+  const updated = db.prepare('SELECT * FROM resources WHERE id = ?').get(req.params.id);
+  res.json({ ...updated, members: parseMembers(updated.members) });
 });
 
 // Delete resource
@@ -63,5 +74,10 @@ router.delete('/:id', (req, res) => {
   db.prepare('DELETE FROM resources WHERE id = ?').run(req.params.id);
   res.json({ success: true });
 });
+
+function parseMembers(val) {
+  if (!val) return [];
+  try { return JSON.parse(val); } catch { return []; }
+}
 
 export default router;

@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS resources (
     department      TEXT,
     color           TEXT,
     availability    REAL DEFAULT 1.0,
+    members         TEXT,
     created_at      TEXT DEFAULT (datetime('now'))
 );
 
@@ -165,3 +166,5 @@ INSERT OR IGNORE INTO settings (key, value) VALUES
     ('date_format', 'YYYY-MM-DD'),
     ('working_days', '[1,2,3,4,5]'),
     ('first_day_of_week', '1');
+
+-- Note: resources.members column added via migration in connection.js if missing

@@ -164,6 +164,16 @@ export async function initDb() {
     }
   }
 
+  // Migration: add members column if missing (multi-person roles)
+  try {
+    sqlDb.exec("ALTER TABLE resources ADD COLUMN members TEXT");
+    db.saveToDisk();
+  } catch (e) {
+    if (!e.message.includes('duplicate') && !e.message.includes('already exists')) {
+      console.warn('Migration warning:', e.message);
+    }
+  }
+
   return db;
 }
 
