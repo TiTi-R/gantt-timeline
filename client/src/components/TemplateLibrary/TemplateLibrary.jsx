@@ -232,15 +232,15 @@ export default function TemplateLibrary() {
           <div className="mb-6">
             <h4 className="font-medium text-gray-700 text-sm mb-3">时间线预览</h4>
             <div className="bg-white border rounded-xl p-4 overflow-x-auto">
-              <div style={{minWidth:Math.max((maxRel+1)*32+360,720)}}>
+              <div style={{minWidth:Math.max((maxRel+1)*32,600)}}>
                 <div className="flex pb-1 mb-2" style={{borderBottom:'1px solid #e5e7eb'}}>
-                  {/* Left spacer to align with labels below */}
                   <div className="shrink-0" style={{width:208}}/>
                   <div className="flex">
                     {Array.from({length:Math.max(maxRel+1,20)},(_,i)=>(
                       <div key={i} className={`text-xs ${i%5===0?'text-gray-400 font-medium':'text-gray-300'}`} style={{width:32,minWidth:32}}>{i%5===0||i===0?(i+1):''}</div>
                     ))}
                   </div>
+                  <div className="sticky right-0 bg-white shrink-0 w-28 ml-2"/>
                 </div>
                 {milestones.map(m=>{
                   const children = getChildren(m.id);
@@ -251,12 +251,12 @@ export default function TemplateLibrary() {
                       {msDur>0&&(<div className="absolute rounded-md h-5 flex items-center px-2 text-xs text-white font-medium truncate" style={{left:msLeft,width:msWidth,background:'linear-gradient(90deg,#f59e0b,#fbbf24)'}}>{msDur}d</div>)}
                       {msDur===0&&(<div className="absolute top-0.5" style={{left:msLeft}}><span className="text-amber-500 text-sm">◆</span></div>)}
                     </div>
-                    <span className="text-xs text-gray-400 shrink-0 ml-2 w-28 truncate">{getTaskRoles(m).join(',')}</span>
+                    <span className="text-xs text-gray-400 shrink-0 w-28 ml-2 truncate sticky right-0 bg-white">{getTaskRoles(m).join(',')}</span>
                   </div>
-                  {children.map(child=>{const l=(child.relative_start||0)*32,w=Math.max(32,(child.duration_days||1)*32);return(<div key={child.id} className="flex items-center mb-0.5 py-0.5"><div className="w-52 text-xs text-gray-600 truncate pr-2 shrink-0 pl-3">↳ {child.name}</div><div className="flex-1 relative h-5"><div className="absolute rounded-full h-5 flex items-center px-2 text-xs text-white truncate" style={{left:l,width:w,background:child.color||'#4472C4'}}>{child.duration_days}d</div></div><span className="text-xs text-gray-400 shrink-0 ml-2 w-28 truncate">{(()=>{const r=getTaskRoles(child);return r.length?r.join(','):getTaskRoles(m).join(',')})()}</span></div>)})}
+                  {children.map(child=>{const l=(child.relative_start||0)*32,w=Math.max(32,(child.duration_days||1)*32);return(<div key={child.id} className="flex items-center mb-0.5 py-0.5"><div className="w-52 text-xs text-gray-600 truncate pr-2 shrink-0 pl-3">↳ {child.name}</div><div className="flex-1 relative h-5"><div className="absolute rounded-full h-5 flex items-center px-2 text-xs text-white truncate" style={{left:l,width:w,background:child.color||'#4472C4'}}>{child.duration_days}d</div></div><span className="text-xs text-gray-400 shrink-0 w-28 ml-2 truncate sticky right-0 bg-white">{(()=>{const r=getTaskRoles(child);return r.length?r.join(','):getTaskRoles(m).join(',');})()}</span></div>)})}
                   </div>);
                 })}
-                                {orphans.length>0&&orphans.map(task=>{const w=Math.max(32,(task.duration_days||1)*32);return(<div key={task.id} className="flex items-center mb-0.5 py-0.5"><div className="w-52 text-xs text-gray-700 truncate pr-2 shrink-0">{task.name}</div><div className="flex-1 relative h-5"><div className="absolute rounded-full h-5 flex items-center px-2 text-xs text-white truncate" style={{left:0,width:w,background:task.color||'#8b5cf6'}}>{task.duration_days}d</div></div><span className="text-xs text-gray-400 shrink-0 ml-2 w-28 truncate">{getTaskRoles(task).join(',')}</span></div>)})}
+                {orphans.length>0&&orphans.map(task=>{const w=Math.max(32,(task.duration_days||1)*32);return(<div key={task.id} className="flex items-center mb-0.5 py-0.5"><div className="w-52 text-xs text-gray-700 truncate pr-2 shrink-0">{task.name}</div><div className="flex-1 relative h-5"><div className="absolute rounded-full h-5 flex items-center px-2 text-xs text-white truncate" style={{left:0,width:w,background:task.color||'#8b5cf6'}}>{task.duration_days}d</div></div><span className="text-xs text-gray-400 shrink-0 w-28 ml-2 truncate sticky right-0 bg-white">{getTaskRoles(task).join(',')}</span></div>)})}
                 {tasks.length===0&&<p className="text-sm text-gray-400 text-center py-8">暂无任务</p>}
               </div>
             </div>
