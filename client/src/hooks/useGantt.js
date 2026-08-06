@@ -28,6 +28,9 @@ export function useGantt(containerId, options = {}) {
       gantt.config.order_branch = true;
       gantt.config.order_branch_free = false;
       gantt.config.open_tree_initially = true;
+      gantt.config.autoscroll = true;
+      gantt.config.autoscroll_speed = 80;
+      gantt.config.fit_tasks = true;
 
       gantt.templates.task_class = (start, end, task) => {
         if (task.type === 'milestone') return 'gantt-milestone-task';
