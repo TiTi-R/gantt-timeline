@@ -287,7 +287,7 @@ export default function TemplateLibrary() {
                       <select className="text-xs border rounded px-1 py-0.5 mr-1 max-w-[100px] truncate bg-white"
                         value={m.resource_names||''} onClick={e=>e.stopPropagation()}
                         onChange={e=>handleResourceChange(m, e.target.value)}>
-                        <option value="">资源</option>
+                        <option value=""></option>
                         {roleNames.map(role=><option key={role} value={role}>{role}</option>)}
                       </select>
                       <button className="text-xs text-gray-400 hover:text-gray-700 opacity-0 group-hover:opacity-100 mr-1" onClick={e=>{e.stopPropagation();handleRestructure(m,'convert');}}>🔄</button>
@@ -317,9 +317,9 @@ export default function TemplateLibrary() {
                           )}
                           <span className="text-xs text-gray-400 w-24 text-right mr-3 shrink-0">Day {(child.relative_start||0)+1} ~ {(child.relative_end||0)+1}</span>
                           <select className="text-xs border rounded px-1 py-0.5 mr-1 max-w-[100px] truncate bg-white"
-                            value={child.resource_names||''} onClick={e=>e.stopPropagation()}
+                            value={child.resource_names||m.resource_names||''} onClick={e=>e.stopPropagation()}
                             onChange={e=>handleResourceChange(child, e.target.value)}>
-                            <option value="">资源</option>
+                            <option value=""></option>
                             {roleNames.map(role=><option key={role} value={role}>{role}</option>)}
                           </select>
                           <select value={child.parent_id||''} onClick={e=>e.stopPropagation()} onChange={e=>handleRestructure(child,'move',e.target.value?Number(e.target.value):null)}
@@ -364,7 +364,7 @@ export default function TemplateLibrary() {
                       <select className="text-xs border rounded px-1 py-0.5 mr-1 max-w-[100px] truncate bg-white"
                         value={task.resource_names||''} onClick={e=>e.stopPropagation()}
                         onChange={e=>handleResourceChange(task, e.target.value)}>
-                        <option value="">资源</option>
+                        <option value=""></option>
                         {roleNames.map(role=><option key={role} value={role}>{role}</option>)}
                       </select>
                       {msOptions.length>0&&(
