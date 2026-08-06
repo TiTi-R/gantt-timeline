@@ -38,6 +38,7 @@ export const schemas = {
     notes: Joi.string().allow('', null).max(5000),
     resource_ids: Joi.array().items(Joi.number().integer()).allow(null),
     resource_names: Joi.string().allow('', null).max(2000),
+    resource_person_names: Joi.string().allow('', null).max(2000),
   }),
 
   taskUpdate: Joi.object({
@@ -54,6 +55,7 @@ export const schemas = {
     notes: Joi.string().allow('', null).max(5000),
     resource_ids: Joi.array().items(Joi.number().integer()),
     resource_names: Joi.string().allow('', null).max(2000),
+    resource_person_names: Joi.string().allow('', null).max(2000),
   }).min(1),
 
   dependencyCreate: Joi.object({

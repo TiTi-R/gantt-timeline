@@ -168,7 +168,7 @@ export default function TemplateLibrary() {
                 onClick={()=>{setEditNameValue(editingTemplate.name);setEditingName(true);}} title="点击编辑名称">{editingTemplate.name}</span>
             )}
             <span className="text-xs text-gray-400">
-              {milestones.length} 里程碑 · {tasks.filter(t=>t.task_type!=='milestone'&&t.parent_id).length + orphans.length} 子任务
+              {milestones.length} 阶段 · {tasks.filter(t=>t.task_type!=='milestone'&&t.parent_id).length + orphans.length} 子任务
             </span>
           </div>
           <button onClick={()=>handleDelete(editingTemplate.id)} className="px-3 py-1.5 text-red-500 text-xs rounded-md hover:bg-red-50">{t('delete')}</button>
@@ -194,12 +194,12 @@ export default function TemplateLibrary() {
         <div className="flex-1 overflow-auto p-6">
           {/* Add form */}
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-            <h4 className="font-medium text-gray-800 text-sm mb-3">{editorForm.taskType==='milestone'?'添加阶段里程碑':'添加任务'}</h4>
+            <h4 className="font-medium text-gray-800 text-sm mb-3">{editorForm.taskType==='milestone'?'添加阶段':'添加任务'}</h4>
             <div className="grid grid-cols-12 gap-3 items-end">
               <div className="col-span-2">
                 <div className="flex bg-white border rounded-lg overflow-hidden">
                   <button type="button" onClick={()=>setEditorForm({...editorForm,taskType:'milestone',parent_id:'',duration_days:0})}
-                    className={`flex-1 px-2 py-1.5 text-xs font-medium transition-colors ${editorForm.taskType==='milestone'?'bg-amber-500 text-white':'text-gray-500 hover:bg-gray-50'}`}>里程碑</button>
+                    className={`flex-1 px-2 py-1.5 text-xs font-medium transition-colors ${editorForm.taskType==='milestone'?'bg-amber-500 text-white':'text-gray-500 hover:bg-gray-50'}`}>阶段</button>
                   <button type="button" onClick={()=>setEditorForm({...editorForm,taskType:'task',duration_days:0})}
                     className={`flex-1 px-2 py-1.5 text-xs font-medium transition-colors ${editorForm.taskType==='task'?'bg-blue-500 text-white':'text-gray-500 hover:bg-gray-50'}`}>任务</button>
                 </div>
@@ -225,7 +225,7 @@ export default function TemplateLibrary() {
                   className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 disabled:opacity-50 font-bold">+</button>
               </div>
             </div>
-            <p className="text-xs text-gray-400 mt-2">添加后将自动排程：里程碑并行，子任务累积</p>
+            <p className="text-xs text-gray-400 mt-2">添加后将自动排程：阶段并行，子任务累积</p>
           </div>
 
           {/* Timeline preview */}
@@ -240,23 +240,24 @@ export default function TemplateLibrary() {
                       <div key={i} className={`text-xs ${i%5===0?'text-gray-400 font-medium':'text-gray-300'}`} style={{width:32,minWidth:32}}>{i%5===0||i===0?(i+1):''}</div>
                     ))}
                   </div>
-                  <div className="sticky right-0 shrink-0 w-28 ml-2"/>
+                  <div className="sticky right-0 shrink-0 w-40 ml-6"/>
                 </div>
                 {milestones.map(m=>{
                   const children = getChildren(m.id);
-                  const msLeft=(m.relative_start||0)*32, msDur=m.duration_days||0, msWidth=msDur>0?Math.max(32,msDur*32):0;
+                  const childrenTotal = children.reduce((s,c)=>s+(c.duration_days||0),0);
+                  const msLeft=(m.relative_start||0)*32, msDur=childrenTotal, msWidth=childrenTotal>0?Math.max(32,childrenTotal*32):0;
                   return (<div key={m.id} className="mb-3"><div className="flex items-center mb-0.5 py-0.5">
                     <span className="text-xs font-bold text-amber-700 shrink-0 w-64 pl-1 truncate">◆ {m.name}</span>
                     <div className="flex-1 relative h-6">
                       {msDur>0&&(<div className="absolute rounded-md h-5 flex items-center px-2 text-xs text-white font-medium truncate" style={{left:msLeft,width:msWidth,background:'linear-gradient(90deg,#f59e0b,#fbbf24)'}}>{msDur}d</div>)}
                       {msDur===0&&(<div className="absolute top-0.5" style={{left:msLeft}}><span className="text-amber-500 text-sm">◆</span></div>)}
                     </div>
-                    <span className="text-xs text-gray-400 shrink-0 w-28 ml-2 truncate sticky right-0 font-semibold text-amber-600">{getTaskRoles(m).join(',')}</span>
+                    <span className="text-xs text-gray-400 shrink-0 w-40 ml-6 truncate sticky right-0 font-semibold text-amber-600">{getTaskRoles(m).join(',')}</span>
                   </div>
-                  {children.map(child=>{const l=(child.relative_start||0)*32,w=Math.max(32,(child.duration_days||1)*32);return(<div key={child.id} className="flex items-center mb-0.5 py-0.5"><div className="w-64 text-xs text-gray-600 truncate pr-2 shrink-0 pl-3">↳ {child.name}</div><div className="flex-1 relative h-5"><div className="absolute rounded-full h-5 flex items-center px-2 text-xs text-white truncate" style={{left:l,width:w,background:child.color||'#4472C4'}}>{child.duration_days}d</div></div><span className="text-xs text-gray-400 shrink-0 w-28 ml-2 truncate sticky right-0 font-semibold text-amber-600">{getTaskRoles(child).join(',')}</span></div>)})}
+                  {children.map(child=>{const l=(child.relative_start||0)*32,w=Math.max(32,(child.duration_days||1)*32);return(<div key={child.id} className="flex items-center mb-0.5 py-0.5"><div className="w-64 text-xs text-gray-600 truncate pr-2 shrink-0 pl-3">↳ {child.name}</div><div className="flex-1 relative h-5"><div className="absolute rounded-full h-5 flex items-center px-2 text-xs text-white truncate" style={{left:l,width:w,background:child.color||'#4472C4'}}>{child.duration_days}d</div></div><span className="text-xs text-gray-400 shrink-0 w-40 ml-6 truncate sticky right-0 font-semibold text-amber-600">{getTaskRoles(child).join(',')}</span></div>)})}
                   </div>);
                 })}
-                {orphans.length>0&&orphans.map(task=>{const w=Math.max(32,(task.duration_days||1)*32);return(<div key={task.id} className="flex items-center mb-0.5 py-0.5"><div className="w-64 text-xs text-gray-700 truncate pr-2 shrink-0">{task.name}</div><div className="flex-1 relative h-5"><div className="absolute rounded-full h-5 flex items-center px-2 text-xs text-white truncate" style={{left:0,width:w,background:task.color||'#8b5cf6'}}>{task.duration_days}d</div></div><span className="text-xs text-gray-400 shrink-0 w-28 ml-2 truncate sticky right-0 font-semibold text-amber-600">{getTaskRoles(task).join(',')}</span></div>)})}
+                {orphans.length>0&&orphans.map(task=>{const w=Math.max(32,(task.duration_days||1)*32);return(<div key={task.id} className="flex items-center mb-0.5 py-0.5"><div className="w-64 text-xs text-gray-700 truncate pr-2 shrink-0">{task.name}</div><div className="flex-1 relative h-5"><div className="absolute rounded-full h-5 flex items-center px-2 text-xs text-white truncate" style={{left:0,width:w,background:task.color||'#8b5cf6'}}>{task.duration_days}d</div></div><span className="text-xs text-gray-400 shrink-0 w-40 ml-6 truncate sticky right-0 font-semibold text-amber-600">{getTaskRoles(task).join(',')}</span></div>)})}
                 {tasks.length===0&&<p className="text-sm text-gray-400 text-center py-8">暂无任务</p>}
               </div>
             </div>
@@ -298,7 +299,7 @@ export default function TemplateLibrary() {
                       )}
                       <span className="text-xs text-gray-400 shrink-0 mr-2">{children.reduce((s,c)=>s+(c.duration_days||0),0)}d</span>
                       {children.length>0&&<span className="text-xs text-amber-400 mr-3">· {children.length} 子任务</span>}
-                      <span className="text-xs bg-amber-100 text-amber-600 px-1.5 rounded mr-2">里程碑</span>
+                      <span className="text-xs bg-amber-100 text-amber-600 px-1.5 rounded mr-2">阶段</span>
                       <div className="relative shrink-0 mr-1">
                         <div className="text-xs border rounded px-1.5 w-[100px] h-6 flex items-center overflow-hidden bg-white hover:border-blue-300 cursor-pointer select-none"
                           onClick={e=>{e.stopPropagation();setOpenResourcePicker(openResourcePicker===m.id?null:m.id);}}>
@@ -380,7 +381,7 @@ export default function TemplateLibrary() {
               {/* ORPHANS */}
               {orphans.length>0&&(
                 <div className="border-t-2 border-dashed border-gray-200">
-                  <div className="px-4 py-1 bg-gray-50 text-xs text-gray-400 font-medium">无归属 — 通过下拉菜单归入里程碑</div>
+                  <div className="px-4 py-1 bg-gray-50 text-xs text-gray-400 font-medium">无归属 — 通过下拉菜单归入阶段</div>
                   {orphans.map(task=>(
                     <div key={`slot-${task.id}`} className="flex items-center px-4 py-2 group hover:bg-purple-50/50 border-t border-gray-50">
                       <OrderButtons task={task} onUp={swapUp} onDown={swapDown}/>
@@ -491,7 +492,7 @@ export default function TemplateLibrary() {
           {templates.map(tmpl=>(
             <div key={tmpl.id} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
               <h3 className="font-semibold text-gray-800 mb-1">{tmpl.name} <span className={`text-xs font-normal ${tmpl.status==='published'?'text-green-600':'text-amber-600'}`}>· {tmpl.status==='published'?'✅ 已保存':'📝 草稿'}</span></h3>{tmpl.description&&<p className="text-sm text-gray-500 mb-3">{tmpl.description}</p>}
-              <div className="flex items-center gap-4 text-xs text-gray-500 mb-4"><span>📌 {tmpl.milestone_count||0} 里程碑 · {tmpl.task_count-(tmpl.milestone_count||0)} 子任务</span>{tmpl.total_duration>0&&<span>📅 {tmpl.total_duration} 天</span>}</div>
+              <div className="flex items-center gap-4 text-xs text-gray-500 mb-4"><span>📌 {tmpl.milestone_count||0} 阶段 · {tmpl.task_count-(tmpl.milestone_count||0)} 子任务</span>{tmpl.total_duration>0&&<span>📅 {tmpl.total_duration} 天</span>}</div>
               <div className="flex gap-2">
                 <button onClick={async()=>{await openTemplate(tmpl.id).catch(()=>{});}} className="px-3 py-1.5 bg-gray-100 text-gray-700 text-xs rounded-md hover:bg-gray-200 font-medium">✏️ 编辑</button>
                 <button onClick={()=>handleDelete(tmpl.id)} className="px-3 py-1.5 text-red-500 text-xs rounded-md hover:bg-red-50">{t('delete')}</button>

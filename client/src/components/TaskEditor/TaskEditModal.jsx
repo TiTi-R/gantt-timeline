@@ -119,7 +119,7 @@ export default function TaskEditModal({ projectId, task, onClose, onSaved }) {
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">类型</label>
             <div className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-500 bg-gray-50">
-              {form.task_type === 'milestone' ? '◆ 里程碑' : '任务'}
+              {form.task_type === 'milestone' ? '◆ 阶段' : '任务'}
             </div>
           </div>
 

@@ -56,6 +56,10 @@ export function useGantt(containerId, options = {}) {
           const rn = task.resource_names || '';
           return `<span class="gantt-role-btn" data-task-id="${task.id}" onclick="window.__openRolePicker(${task.id},event)" title="${(rn||'').replace(/"/g,'&quot;')}" style="cursor:pointer;color:#d97706;font-weight:500;font-size:11px;display:block;width:100%;height:100%;">${rn || ' '}</span>`;
         }},
+        { name: 'resource_person', label: '负责人', width: 120, align: 'left', template: function(task) {
+          const pn = task.resource_person_names || '';
+          return `<span class="gantt-person-btn" data-task-id="${task.id}" onclick="window.__openPersonPicker(${task.id},event)" title="${(pn||'').replace(/"/g,'&quot;')}" style="cursor:pointer;color:#2563eb;font-weight:500;font-size:11px;display:block;width:100%;height:100%;">${pn || ' '}</span>`;
+        }},
       ];
 
       gantt.config.lightbox.sections = [];

@@ -110,24 +110,53 @@ router.get('/:id/gantt-data', (req, res) => {
   const tasks = db.prepare('SELECT * FROM tasks WHERE project_id = ? ORDER BY sort_order').all(req.params.id);
   const deps = db.prepare('SELECT * FROM dependencies WHERE project_id = ?').all(req.params.id);
 
+  // Pre-compute milestone date ranges from children
+  const childrenByParent = {};
+  tasks.forEach(t => {
+    if (t.parent_id) {
+      if (!childrenByParent[t.parent_id]) childrenByParent[t.parent_id] = [];
+      childrenByParent[t.parent_id].push(t);
+    }
+  });
+
   const data = tasks.map(t => {
-    const parts = (t.end_date || '').split('-').map(Number);
+    let startDate = t.start_date;
+    let endDate = t.end_date;
+    let durationDays = t.duration_days || 0;
+
+    // Milestones: derive from child tasks (earliest start, latest end)
+    if (t.is_milestone) {
+      const children = childrenByParent[t.id];
+      if (children && children.length > 0) {
+        const sorted = children.map(c => c.start_date).filter(Boolean).sort();
+        const ends = children.map(c => c.end_date).filter(Boolean).sort();
+        if (sorted.length > 0) startDate = sorted[0];
+        if (ends.length > 0) endDate = ends[ends.length - 1];
+        // Recompute duration from derived dates
+        const s = new Date(startDate + 'T00:00:00');
+        const e = new Date(endDate + 'T00:00:00');
+        durationDays = Math.round((e - s) / 86400000);
+      }
+    }
+
+    const parts = (endDate || '').split('-').map(Number);
     const shifted = new Date(parts[0], parts[1] - 1, parts[2] + 1);
     const ed = shifted.getFullYear() + '-' + String(shifted.getMonth() + 1).padStart(2, '0') + '-' + String(shifted.getDate()).padStart(2, '0');
     return {
       id: t.id,
       text: t.name,
-      start_date: t.start_date,
+      start_date: startDate,
       end_date: ed,
-      duration: (t.duration_days || 0) + 1,
+      duration: durationDays + 1,
       progress: t.progress || 0,
       parent: t.parent_id || 0,
       type: t.is_milestone ? 'milestone' : t.task_type,
       color: t.is_milestone ? '#f59e0b' : (t.parent_id ? '#4472C4' : '#8b5cf6'),
       phase_id: t.phase_id,
       wbs: t.wbs_code,
-      real_end: t.end_date,
+      real_end: endDate,
       resource_names: t.resource_names || '',
+      resource_person_names: t.resource_person_names || '',
     };
   });
 

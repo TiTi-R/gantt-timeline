@@ -44,7 +44,7 @@
     "deleteConfirm": "确定删除此任务及其所有子任务吗？",
     "name": "任务名称",
     "type": "任务类型",
-    "milestone": "里程碑",
+    "milestone": "阶段",
     "phase": "阶段",
     "parent": "父任务",
     "progress": "进度",

@@ -184,6 +184,16 @@ export async function initDb() {
     }
   }
 
+  // Migration: add resource_person_names column to tasks if missing
+  try {
+    sqlDb.exec("ALTER TABLE tasks ADD COLUMN resource_person_names TEXT");
+    db.saveToDisk();
+  } catch (e) {
+    if (!e.message.includes('duplicate') && !e.message.includes('already exists')) {
+      console.warn('Migration warning:', e.message);
+    }
+  }
+
   return db;
 }
 

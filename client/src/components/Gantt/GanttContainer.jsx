@@ -52,8 +52,45 @@ export default function GanttContainer() {
   const [showMembers, setShowMembers] = useState(false);
   const [resourcePicker, setResourcePicker] = useState(null);
   const [popoverPos, setPopoverPos] = useState({ x: 0, y: 0 });
+  const [personPicker, setPersonPicker] = useState(null);
+  const [personPopoverPos, setPersonPopoverPos] = useState({ x: 0, y: 0 });
 
   const roleNames = [...new Set(resources.filter(r => r.role).map(r => r.role))].sort();
+
+  // Role → person names map (for filtering person picker by selected roles)
+  const rolePersonMap = useMemo(() => {
+    const map = {};
+    resources.forEach(r => {
+      if (!r.role) return;
+      const persons = [r.name, ...(r.members || [])].filter(Boolean);
+      if (!map[r.role]) map[r.role] = new Set();
+      persons.forEach(p => map[r.role].add(p));
+    });
+    // Convert Sets to sorted arrays
+    const out = {};
+    for (const [role, set] of Object.entries(map)) {
+      out[role] = [...set].sort();
+    }
+    return out;
+  }, [resources]);
+
+  // Get person names filtered by a task's selected roles
+  const getAvailablePersons = (taskId) => {
+    const pt = project?.tasks?.find(t => t.id === taskId);
+    if (!pt) return [];
+    const curRoles = (pt.resource_names || '').split(',').filter(Boolean);
+    if (curRoles.length === 0) {
+      const all = new Set();
+      Object.values(rolePersonMap).forEach(arr => arr.forEach(p => all.add(p)));
+      return [...all].sort();
+    }
+    const names = new Set();
+    curRoles.forEach(role => {
+      const arr = rolePersonMap[role];
+      if (arr) arr.forEach(p => names.add(p));
+    });
+    return [...names].sort();
+  };
 
   const saveTotalLabel = (val) => {
     setTotalLabel(val);
@@ -149,6 +186,14 @@ export default function GanttContainer() {
           setPopoverPos({ x: rect.left, y: rect.bottom + 4 });
         }
       };
+      window.__openPersonPicker = (taskId, e) => {
+        setPersonPicker({ taskId });
+        const span = e?.target?.closest?.('.gantt-person-btn');
+        if (span) {
+          const rect = span.getBoundingClientRect();
+          setPersonPopoverPos({ x: rect.left, y: rect.bottom + 4 });
+        }
+      };
     },
   });
 
@@ -231,10 +276,21 @@ export default function GanttContainer() {
     } catch (e) { console.error(e); }
   };
 
+  const handlePersonToggle = async (taskId, person) => {
+    const task = project?.tasks?.find(t => t.id === taskId);
+    if (!task) return;
+    const cur = (task.resource_person_names || '').split(',').filter(Boolean);
+    const next = cur.includes(person) ? cur.filter(p => p !== person) : [...cur, person];
+    try {
+      await updateTask(taskId, { resource_person_names: next.length ? next.join(',') : null });
+      await loadAll();
+    } catch (e) { console.error(e); }
+  };
+
   const handleDelSelected = () => {
     const g = getGantt(); if (!g) return;
     const id = g.getSelectedId();
-    if (!id) return alert('请先点击选择一行任务/里程碑');
+    if (!id) return alert('请先点击选择一行任务/阶段');
     if (confirm('确定删除此任务吗？')) {
       deleteTask(Number(id)).then(loadAll).catch(e => alert('删除失败: ' + (e.response?.data?.error || e.message)));
     }
@@ -288,7 +344,7 @@ export default function GanttContainer() {
     const g = getGantt();
     if (!g || !project?.tasks) return;
     const sel = g.getSelectedId();
-    if (!sel) return alert('请先点击选择一行任务/里程碑');
+    if (!sel) return alert('请先点击选择一行任务/阶段');
     const taskId = Number(sel);
     const task = project.tasks.find(t => t.id === taskId);
     if (!task) return;
@@ -418,6 +474,34 @@ export default function GanttContainer() {
             </div>
           </div>
         )}
+
+        {/* Person picker popover */}
+        {personPicker && (
+          <div className="fixed inset-0 z-20" onClick={() => setPersonPicker(null)}>
+            <div className="absolute bg-white border rounded-lg shadow-lg p-3 w-56" style={{left: personPopoverPos.x, top: personPopoverPos.y}} onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-gray-700">选择负责人</span>
+              </div>
+              <div className="max-h-48 overflow-auto border-b border-gray-100 pb-2 mb-2">
+                {getAvailablePersons(personPicker.taskId).map(person => {
+                  const task = project?.tasks?.find(t => t.id === personPicker.taskId);
+                  const cur = (task?.resource_person_names || '').split(',').filter(Boolean);
+                  return (
+                    <label key={person} className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 rounded text-xs cursor-pointer">
+                      <input type="checkbox" checked={cur.includes(person)}
+                        onChange={() => handlePersonToggle(personPicker.taskId, person)} className="shrink-0"/>
+                      <span className="truncate" title={person}>{person}</span>
+                    </label>
+                  );
+                })}
+              </div>
+              {getAvailablePersons(personPicker.taskId).length === 0 && (
+                <p className="text-xs text-gray-400 text-center py-2">{project?.tasks?.find(t => t.id === personPicker.taskId)?.resource_names ? '所选角色暂无人员' : '请先选择负责角色'}</p>
+              )}
+              <button className="w-full text-xs text-gray-400 hover:text-gray-600 text-center py-1" onClick={() => setPersonPicker(null)}>关闭</button>
+            </div>
+          </div>
+        )}
         {loading && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80">
             <div className="text-gray-400 animate-pulse text-lg">{t('loading')}</div>
@@ -452,7 +536,7 @@ export default function GanttContainer() {
                 <div className="flex bg-gray-100 rounded-lg overflow-hidden">
                   <button type="button"
                     onClick={() => { setNewTaskType('milestone'); setNewTaskParent(''); }}
-                    className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${newTaskType==='milestone'?'bg-amber-500 text-white':'text-gray-500 hover:bg-gray-200'}`}>里程碑</button>
+                    className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${newTaskType==='milestone'?'bg-amber-500 text-white':'text-gray-500 hover:bg-gray-200'}`}>阶段</button>
                   <button type="button"
                     onClick={() => {
                       setNewTaskType('task');
@@ -464,7 +548,7 @@ export default function GanttContainer() {
 
               {newTaskType==='task' && milestoneOptions.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">归到里程碑</label>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">归到阶段</label>
                   <select className="w-full border rounded-lg px-3 py-2 text-sm" value={newTaskParent}
                     onChange={e => setNewTaskParent(e.target.value)}>
                     {milestoneOptions.map(m => <option key={m.id} value={m.id}>◆ {m.name}</option>)}
