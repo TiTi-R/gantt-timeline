@@ -251,11 +251,12 @@ export default function TemplateLibrary() {
                       {msDur>0&&(<div className="absolute rounded-md h-5 flex items-center px-2 text-xs text-white font-medium truncate" style={{left:msLeft,width:msWidth,background:'linear-gradient(90deg,#f59e0b,#fbbf24)'}}>{msDur}d</div>)}
                       {msDur===0&&(<div className="absolute top-0.5" style={{left:msLeft}}><span className="text-amber-500 text-sm">◆</span></div>)}
                     </div>
+                    <span className="text-xs text-gray-400 shrink-0 ml-2 w-28 truncate">{getTaskRoles(m).join(',')}</span>
                   </div>
-                  {children.map(child=>{const l=(child.relative_start||0)*32,w=Math.max(32,(child.duration_days||1)*32);return(<div key={child.id} className="flex items-center mb-0.5 py-0.5"><div className="w-52 text-xs text-gray-600 truncate pr-2 shrink-0 pl-3">↳ {child.name}</div><div className="flex-1 relative h-5"><div className="absolute rounded-full h-5 flex items-center px-2 text-xs text-white truncate" style={{left:l,width:w,background:child.color||'#4472C4'}}>{child.duration_days}d</div></div></div>)})}
+                  {children.map(child=>{const l=(child.relative_start||0)*32,w=Math.max(32,(child.duration_days||1)*32);return(<div key={child.id} className="flex items-center mb-0.5 py-0.5"><div className="w-52 text-xs text-gray-600 truncate pr-2 shrink-0 pl-3">↳ {child.name}</div><div className="flex-1 relative h-5"><div className="absolute rounded-full h-5 flex items-center px-2 text-xs text-white truncate" style={{left:l,width:w,background:child.color||'#4472C4'}}>{child.duration_days}d</div></div><span className="text-xs text-gray-400 shrink-0 ml-2 w-28 truncate">{(()=>{const r=getTaskRoles(child);return r.length?r.join(','):getTaskRoles(m).join(',')})()}</span></div>)})}
                   </div>);
                 })}
-                {orphans.length>0&&orphans.map(task=>{const l=(task.relative_start||0)*32,w=Math.max(32,(task.duration_days||1)*32);return(<div key={task.id} className="flex items-center mb-0.5 py-0.5"><div className="w-52 text-xs text-gray-700 truncate pr-2 shrink-0">{task.name}</div><div className="flex-1 relative h-5"><div className="absolute rounded-full h-5 flex items-center px-2 text-xs text-white truncate" style={{left:l,width:w,background:task.color||'#8b5cf6'}}>{task.duration_days}d</div></div></div>)})}
+                {orphans.length>0&&orphans.map(task=>{const l=(task.relative_start||0)*32,w=Math.max(32,(task.duration_days||1)*32);return(<div key={task.id} className="flex items-center mb-0.5 py-0.5"><div className="w-52 text-xs text-gray-700 truncate pr-2 shrink-0">{task.name}</div><div className="flex-1 relative h-5"><div className="absolute rounded-full h-5 flex items-center px-2 text-xs text-white truncate" style={{left:l,width:w,background:task.color||'#8b5cf6'}}>{task.duration_days}d</div></div><span className="text-xs text-gray-400 shrink-0 ml-2 w-28 truncate">{getTaskRoles(task).join(',')}</span></div>)})}
                 {tasks.length===0&&<p className="text-sm text-gray-400 text-center py-8">暂无任务</p>}
               </div>
             </div>
@@ -299,7 +300,7 @@ export default function TemplateLibrary() {
                       {children.length>0&&<span className="text-xs text-amber-400 mr-3">· {children.length} 子任务</span>}
                       <span className="text-xs bg-amber-100 text-amber-600 px-1.5 rounded mr-2">里程碑</span>
                       <div className="relative shrink-0 mr-1">
-                        <div className="text-xs border rounded px-1 py-0.5 max-w-[100px] overflow-hidden bg-white hover:border-blue-300 cursor-pointer select-none"
+                        <div className="text-xs border rounded px-1 py-0.5 w-[100px] overflow-hidden bg-white hover:border-blue-300 cursor-pointer select-none"
                           onClick={e=>{e.stopPropagation();setOpenResourcePicker(openResourcePicker===m.id?null:m.id);}}>
                           <span className="block truncate w-full">{getTaskRoles(m).length>0 ? getTaskRoles(m).join(',') : ''}</span>
                         </div>
@@ -349,7 +350,7 @@ export default function TemplateLibrary() {
                             {msOptions.filter(m2=>m2.id!==child.id).map(m2=><option key={m2.id} value={m2.id}>◆ {m2.name}</option>)}
                           </select>
                           <div className="relative shrink-0 mr-1">
-                            <div className="text-xs border rounded px-1 py-0.5 max-w-[100px] overflow-hidden bg-white hover:border-blue-300 cursor-pointer select-none"
+                            <div className="text-xs border rounded px-1 py-0.5 w-[100px] overflow-hidden bg-white hover:border-blue-300 cursor-pointer select-none"
                               onClick={e=>{e.stopPropagation();setOpenResourcePicker(openResourcePicker===child.id?null:child.id);}}>
                               <span className="block truncate w-full">{(()=>{const roles=getTaskRoles(child);return roles.length>0?roles.join(','):'';})()}</span>
                             </div>
@@ -409,7 +410,7 @@ export default function TemplateLibrary() {
                         </select>
                       )}
                       <div className="relative shrink-0 mr-1">
-                        <div className="text-xs border rounded px-1 py-0.5 max-w-[100px] overflow-hidden bg-white hover:border-blue-300 cursor-pointer select-none"
+                        <div className="text-xs border rounded px-1 py-0.5 w-[100px] overflow-hidden bg-white hover:border-blue-300 cursor-pointer select-none"
                           onClick={e=>{e.stopPropagation();setOpenResourcePicker(openResourcePicker===task.id?null:task.id);}}>
                           <span className="block truncate w-full">{getTaskRoles(task).length>0 ? getTaskRoles(task).join(',') : ''}</span>
                         </div>
