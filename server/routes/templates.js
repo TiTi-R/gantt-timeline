@@ -313,8 +313,8 @@ router.post('/:id/import', (req, res) => {
   // Create tasks with date offset
   const insertTask = db.prepare(
     `INSERT INTO tasks (project_id, phase_id, parent_id, name, start_date, end_date, duration_days,
-      task_type, is_milestone, color, sort_order, wbs_code, notes)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      task_type, is_milestone, color, sort_order, wbs_code, notes, resource_names)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );
 
   const nameToIdMap = {};
@@ -334,7 +334,7 @@ router.post('/:id/import', (req, res) => {
       target_project_id, phaseId, null, tt.name,  // parent set to null first
       startDate, endDate, tt.duration_days,
       tt.task_type, tt.is_milestone, tt.color,
-      tt.sort_order, tt.wbs_code, tt.notes
+      tt.sort_order, tt.wbs_code, tt.notes, tt.resource_names || null
     );
     nameToIdMap[tt.name] = r.lastInsertRowid;
     idToTimelineId[tt.id] = r.lastInsertRowid;

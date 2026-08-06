@@ -47,6 +47,14 @@ export default function GanttContainer() {
   });
   const [editingTotal, setEditingTotal] = useState(false);
 
+  // Resource role/member picker
+  const [resources, setResources] = useState([]);
+  const [showMembers, setShowMembers] = useState(false);
+  const [resourcePicker, setResourcePicker] = useState(null); // {taskId, type:'role'|'person'}
+  const [personPicker, setPersonPicker] = useState(null); // taskId for person picker
+
+  const roleNames = [...new Set(resources.filter(r => r.role).map(r => r.role))].sort();
+
   const saveTotalLabel = (val) => {
     setTotalLabel(val);
     try { localStorage.setItem(`total-label-${pid}`, val); } catch {}
@@ -129,6 +137,24 @@ export default function GanttContainer() {
     onMoveTask: async (taskId, direction) => {
       // Handled via toolbar instead
     },
+
+    onGanttReady: (g) => {
+      // Bind click on gantt grid cells for resource columns
+      const gridEl = document.querySelector('.gantt_grid_data');
+      if (!gridEl) return;
+      gridEl.addEventListener('click', (e) => {
+        const cell = e.target.closest('.gantt-role-btn, .gantt-person-btn');
+        if (!cell) return;
+        e.stopPropagation();
+        const taskId = Number(cell.getAttribute('data-task-id'));
+        if (!taskId) return;
+        if (cell.classList.contains('gantt-role-btn')) {
+          setResourcePicker({ taskId });
+        } else if (cell.classList.contains('gantt-person-btn')) {
+          setPersonPicker(taskId);
+        }
+      });
+    },
   });
 
   // -----------------------------------------------------------
@@ -137,8 +163,9 @@ export default function GanttContainer() {
   const loadAll = useCallback(async () => {
     try {
       setLoading(true); setError(null);
-      const [p, gd] = await Promise.all([getProject(pid), getGanttData(pid)]);
+      const [p, gd, res] = await Promise.all([getProject(pid), getGanttData(pid), getResources()]);
       setProject(p); setEditingDesc(p.description || '');
+      setResources(res || []);
       loadData(gd);
     } catch (e) {
       setError(e.response?.data?.error || e.message);
@@ -196,6 +223,18 @@ export default function GanttContainer() {
   };
 
   const handleTaskSaved = () => { setEditTask(null); loadAll(); };
+
+  // Resource role handling
+  const handleRoleToggle = async (taskId, role) => {
+    const task = project?.tasks?.find(t => t.id === taskId);
+    if (!task) return;
+    const cur = (task.resource_names || '').split(',').filter(Boolean);
+    const next = cur.includes(role) ? cur.filter(r => r !== role) : [...cur, role];
+    try {
+      await updateTask(taskId, { resource_names: next.length ? next.join(',') : null });
+      await loadAll();
+    } catch (e) { console.error(e); }
+  };
 
   const handleDelSelected = () => {
     const g = getGantt(); if (!g) return;
@@ -357,8 +396,31 @@ export default function GanttContainer() {
       />
 
       {/* Gantt area */}
-      <div className="flex-1 relative bg-white">
+      <div className="flex-1 relative bg-white overflow-hidden">
         <div id="gantt-chart" className="absolute inset-0" />
+        {/* Resource role picker popover */}
+        {resourcePicker && (
+          <div className="absolute right-4 top-8 z-20 bg-white border rounded-lg shadow-lg p-3 w-56" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold text-gray-700">选择负责角色</span>
+              <button className="text-gray-400 hover:text-gray-600 text-xs" onClick={() => setResourcePicker(null)}>✕</button>
+            </div>
+            <div className="max-h-48 overflow-auto">
+              {roleNames.map(role => {
+                const task = project?.tasks?.find(t => t.id === resourcePicker.taskId);
+                const cur = (task?.resource_names || '').split(',').filter(Boolean);
+                return (
+                  <label key={role} className="flex items-center gap-2 px-2 py-1.5 hover:bg-gray-50 rounded text-xs cursor-pointer">
+                    <input type="checkbox" checked={cur.includes(role)}
+                      onChange={() => handleRoleToggle(resourcePicker.taskId, role)} className="shrink-0"/>
+                    <span>{role}</span>
+                  </label>
+                );
+              })}
+            </div>
+            {roleNames.length === 0 && <p className="text-xs text-gray-400 text-center py-2">暂无角色，请先在资源管理中添加</p>}
+          </div>
+        )}
         {loading && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80">
             <div className="text-gray-400 animate-pulse text-lg">{t('loading')}</div>

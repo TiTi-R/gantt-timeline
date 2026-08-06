@@ -31,11 +31,11 @@ router.post('/projects/:projectId/tasks', validate(schemas.taskCreate), (req, re
   const ed = (end_date || '').split('T')[0];
   const result = db.prepare(
     `INSERT INTO tasks (project_id, phase_id, parent_id, name, start_date, end_date,
-      duration_days, progress, task_type, is_milestone, color, notes, sort_order)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      duration_days, progress, task_type, is_milestone, color, notes, sort_order, resource_names)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(projectId, phase_id || null, parent_id || null, name, sd, ed,
         duration, progress || 0, task_type || 'task', is_milestone ? 1 : 0,
-        color || null, notes || null, (maxSort?.m ?? -1) + 1);
+        color || null, notes || null, (maxSort?.m ?? -1) + 1, req.body.resource_names || null);
 
   const taskId = result.lastInsertRowid;
 
@@ -56,7 +56,7 @@ router.patch('/tasks/:taskId', validate(schemas.taskUpdate), (req, res) => {
   if (!existing) return res.status(404).json({ error: 'Task not found' });
 
   const fields = ['name', 'phase_id', 'parent_id', 'start_date', 'end_date', 'duration_days',
-                  'progress', 'task_type', 'is_milestone', 'color', 'notes'];
+                  'progress', 'task_type', 'is_milestone', 'color', 'notes', 'resource_names'];
   const sets = [];
   const values = [];
   fields.forEach(f => {

@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS tasks (
     sort_order      INTEGER NOT NULL DEFAULT 0,
     is_critical     INTEGER DEFAULT 0,
     notes           TEXT,
+    resource_names  TEXT,
     created_at      TEXT DEFAULT (datetime('now')),
     updated_at      TEXT DEFAULT (datetime('now'))
 );

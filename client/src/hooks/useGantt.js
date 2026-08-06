@@ -52,6 +52,13 @@ export function useGantt(containerId, options = {}) {
         { name: 'duration', label: '工期', width: 65, align: 'center', template: function(task) {
           return Math.round((task.end_date - task.start_date) / 86400000);
         }},
+        { name: 'resource_role', label: '负责角色', width: 110, align: 'center', template: function(task) {
+          const rn = task.resource_names || '';
+          return `<span class="gantt-role-btn" data-task-id="${task.id}" style="cursor:pointer;color:#d97706;font-weight:500;font-size:11px;">${rn || ''}</span>`;
+        }},
+        { name: 'resource_person', label: '负责人', width: 100, align: 'center', template: function(task) {
+          return `<span class="gantt-person-btn" data-task-id="${task.id}" style="cursor:pointer;color:#6366f1;font-size:11px;"></span>`;
+        }},
       ];
 
       gantt.config.lightbox.sections = [];
@@ -66,6 +73,7 @@ export function useGantt(containerId, options = {}) {
       `;
       if (!document.getElementById('gantt-custom-styles')) document.head.appendChild(style);
 
+      if (options.onGanttReady) options.onGanttReady(gantt);
       if (options.onTaskClick) gantt.attachEvent('onTaskClick', options.onTaskClick);
       if (options.onTaskDblClick) gantt.attachEvent('onTaskDblClick', options.onTaskDblClick);
       if (options.onAfterTaskUpdate) gantt.attachEvent('onAfterTaskUpdate', options.onAfterTaskUpdate);

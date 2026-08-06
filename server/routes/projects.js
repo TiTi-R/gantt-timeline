@@ -127,6 +127,7 @@ router.get('/:id/gantt-data', (req, res) => {
       phase_id: t.phase_id,
       wbs: t.wbs_code,
       real_end: t.end_date,
+      resource_names: t.resource_names || '',
     };
   });
 
