@@ -262,6 +262,17 @@ export default function TemplateLibrary() {
             <div className="bg-white border rounded-xl overflow-hidden">
               {tasks.length===0&&<div className="text-sm text-gray-400 text-center py-12">暂无任务</div>}
 
+              {/* Column header */}
+              {tasks.length>0&&(
+                <div className="flex items-center px-4 py-1.5 bg-gray-100 border-b border-gray-200 text-xs text-gray-500 font-medium">
+                  <span className="flex-1 ml-8">名称</span>
+                  <span className="w-14 text-center shrink-0 mr-2">工期</span>
+                  <span className="w-24 text-right shrink-0 mr-3">时间范围</span>
+                  <span className="w-[100px] shrink-0 mr-1">负责角色</span>
+                  <span className="w-[52px] shrink-0"/>
+                </div>
+              )}
+
               {/* MILESTONES */}
               {milestones.map(m=>{
                 const children = getChildren(m.id);
