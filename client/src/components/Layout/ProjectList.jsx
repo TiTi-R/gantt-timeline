@@ -70,13 +70,6 @@ export default function ProjectList() {
     }
   };
 
-  const statusColors = {
-    draft: 'bg-gray-100 text-gray-600',
-    active: 'bg-green-100 text-green-700',
-    completed: 'bg-blue-100 text-blue-700',
-    archived: 'bg-gray-100 text-gray-400'
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -183,7 +176,6 @@ export default function ProjectList() {
                 <th className="text-left px-4 py-3 font-medium text-gray-600">{t('name')}</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">{t('studyId')}</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">{t('indication')}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('status')}</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">{t('startDate')}</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-600">{t('actions')}</th>
               </tr>
@@ -194,11 +186,6 @@ export default function ProjectList() {
                   <td className="px-4 py-3 font-medium text-gray-800">{p.name}</td>
                   <td className="px-4 py-3 text-gray-500">{p.study_id || '-'}</td>
                   <td className="px-4 py-3 text-gray-500">{p.indication || '-'}</td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[p.status] || ''}`}>
-                      {p.status}
-                    </span>
-                  </td>
                   <td className="px-4 py-3 text-gray-500">{p.task_count > 0 ? p.start_date : 'NA'}</td>
                   <td className="px-4 py-3 text-right" onClick={e => e.stopPropagation()}>
                     <button onClick={() => handleDelete(p.id)} className="text-red-500 hover:text-red-700 text-xs font-medium">
