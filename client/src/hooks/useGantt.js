@@ -54,7 +54,7 @@ export function useGantt(containerId, options = {}) {
         }},
         { name: 'resource_role', label: '负责角色', width: 120, align: 'left', template: function(task) {
           const rn = task.resource_names || '';
-          return `<span class="gantt-role-btn" data-task-id="${task.id}" onclick="window.__openRolePicker(${task.id})" title="${(rn||'').replace(/"/g,'&quot;')}" style="cursor:pointer;color:#d97706;font-weight:500;font-size:11px;display:inline-block;min-width:20px;min-height:14px;">${rn || ' '}</span>`;
+          return `<span class="gantt-role-btn" data-task-id="${task.id}" onclick="window.__openRolePicker(${task.id},event)" title="${(rn||'').replace(/"/g,'&quot;')}" style="cursor:pointer;color:#d97706;font-weight:500;font-size:11px;display:block;width:100%;height:100%;">${rn || ' '}</span>`;
         }},
       ];
 
