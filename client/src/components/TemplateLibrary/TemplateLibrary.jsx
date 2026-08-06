@@ -146,6 +146,7 @@ export default function TemplateLibrary() {
     const {milestones,orphans,getChildren} = buildTree(tasks);
     const maxRel = tasks.reduce((m,t)=>Math.max(m,t.relative_end||t.relative_start||0),0);
     const msOptions = milestones;
+    const roleNames = [...new Set(resources.filter(r=>r.role).map(r=>r.role))].sort();
 
     return (
       <div className="flex flex-col h-full">
@@ -287,7 +288,7 @@ export default function TemplateLibrary() {
                         value={m.resource_names||''} onClick={e=>e.stopPropagation()}
                         onChange={e=>handleResourceChange(m, e.target.value)}>
                         <option value="">资源</option>
-                        {resources.filter(r=>r.role).map(r=><option key={r.id} value={r.role}>{r.role}</option>)}
+                        {roleNames.map(role=><option key={role} value={role}>{role}</option>)}
                       </select>
                       <button className="text-xs text-gray-400 hover:text-gray-700 opacity-0 group-hover:opacity-100 mr-1" onClick={e=>{e.stopPropagation();handleRestructure(m,'convert');}}>🔄</button>
                       <button className="text-xs text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100" onClick={e=>{e.stopPropagation();handleDeleteTask(m.id);}}>✕</button>
@@ -319,7 +320,7 @@ export default function TemplateLibrary() {
                             value={child.resource_names||''} onClick={e=>e.stopPropagation()}
                             onChange={e=>handleResourceChange(child, e.target.value)}>
                             <option value="">资源</option>
-                            {resources.filter(r=>r.role).map(r=><option key={r.id} value={r.role}>{r.role}</option>)}
+                            {roleNames.map(role=><option key={role} value={role}>{role}</option>)}
                           </select>
                           <select value={child.parent_id||''} onClick={e=>e.stopPropagation()} onChange={e=>handleRestructure(child,'move',e.target.value?Number(e.target.value):null)}
                             className="text-xs border rounded px-1 py-0.5 mr-1 opacity-0 group-hover:opacity-100 bg-white">
@@ -364,7 +365,7 @@ export default function TemplateLibrary() {
                         value={task.resource_names||''} onClick={e=>e.stopPropagation()}
                         onChange={e=>handleResourceChange(task, e.target.value)}>
                         <option value="">资源</option>
-                        {resources.filter(r=>r.role).map(r=><option key={r.id} value={r.role}>{r.role}</option>)}
+                        {roleNames.map(role=><option key={role} value={role}>{role}</option>)}
                       </select>
                       {msOptions.length>0&&(
                         <select value={task.parent_id||''} onClick={e=>e.stopPropagation()} onChange={e=>handleRestructure(task,'move',e.target.value?Number(e.target.value):null)}
