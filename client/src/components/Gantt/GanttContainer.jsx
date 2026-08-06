@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { gantt } from 'dhtmlx-gantt';
 import { useGantt } from '../../hooks/useGantt.js';
 import {
   getGanttData, getProject, updateProject, createTask, updateTask, deleteTask,
@@ -103,6 +104,9 @@ export default function GanttContainer() {
         const endVal = fmt(endDate);
         const dur = Math.round((item.end_date - item.start_date) / 86400000);
         await updateTask(taskId, { start_date: startVal, end_date: endVal, duration_days: Math.max(1, dur) });
+        // Update gantt display so "结束日期" column reflects the new end_date
+        const gt = gantt.getTask(taskId);
+        if (gt) { gt.real_end = endVal; gantt.updateTask(taskId); }
       } catch (ex) { console.error(ex); }
     },
 
