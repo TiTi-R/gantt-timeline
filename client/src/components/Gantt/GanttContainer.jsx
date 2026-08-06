@@ -139,21 +139,7 @@ export default function GanttContainer() {
     },
 
     onGanttReady: (g) => {
-      // Bind click on gantt grid cells for resource columns
-      const gridEl = document.querySelector('.gantt_grid_data');
-      if (!gridEl) return;
-      gridEl.addEventListener('click', (e) => {
-        const cell = e.target.closest('.gantt-role-btn, .gantt-person-btn');
-        if (!cell) return;
-        e.stopPropagation();
-        const taskId = Number(cell.getAttribute('data-task-id'));
-        if (!taskId) return;
-        if (cell.classList.contains('gantt-role-btn')) {
-          setResourcePicker({ taskId });
-        } else if (cell.classList.contains('gantt-person-btn')) {
-          setPersonPicker(taskId);
-        }
-      });
+      window.__openRolePicker = (taskId) => { setResourcePicker({ taskId }); };
     },
   });
 
