@@ -52,12 +52,10 @@ export function useGantt(containerId, options = {}) {
         { name: 'duration', label: '工期', width: 65, align: 'center', template: function(task) {
           return Math.round((task.end_date - task.start_date) / 86400000);
         }},
-        { name: 'resource_role', label: '负责角色', width: 110, align: 'left', template: function(task) {
+        { name: 'resource_role', label: '负责角色', width: 120, align: 'left', template: function(task) {
           const rn = task.resource_names || '';
-          return `<span class="gantt-role-btn" data-task-id="${task.id}" title="${rn}" style="cursor:pointer;color:#d97706;font-weight:500;font-size:11px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${rn || ''}</span>`;
-        }},
-        { name: 'resource_person', label: '负责人', width: 100, align: 'left', template: function(task) {
-          return `<span class="gantt-person-btn" data-task-id="${task.id}" style="cursor:pointer;color:#6366f1;font-size:11px;"></span>`;
+          if (!rn) return '';
+          return `<span class="gantt-role-btn" data-task-id="${task.id}" title="${rn.replace(/"/g,'&quot;')}" style="cursor:pointer;color:#d97706;font-weight:500;font-size:11px;">${rn}</span>`;
         }},
       ];
 
