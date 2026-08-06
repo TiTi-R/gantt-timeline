@@ -266,8 +266,9 @@ export default function TemplateLibrary() {
               {/* Column header */}
               {tasks.length>0&&(
                 <div className="flex items-center px-4 py-1.5 bg-gray-100 border-b border-gray-200 text-xs text-gray-500 font-medium">
-                  <span className="flex-1 ml-8">名称</span>
-                  <span className="w-[108px] shrink-0 mr-[64px] text-center">负责角色</span>
+                  <span className="ml-8">名称</span>
+                  <div className="flex-1"/>
+                  <span className="mr-[56px] text-center">负责角色</span>
                 </div>
               )}
 
