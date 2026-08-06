@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   getTemplates, getTemplate, createTemplate, deleteTemplate, updateTemplate, getProjects,
   addTemplateTask, updateTemplateTask, deleteTemplateTask, reorderTemplateTasks, publishTemplate,
+  getResources,
 } from '../../services/api.js';
 
 // ──────────────────────────────────────────────────────────────
@@ -28,11 +29,12 @@ export default function TemplateLibrary() {
   const [editTaskNameValue, setEditTaskNameValue] = useState('');
   const [editingDurationId, setEditingDurationId] = useState(null);
   const [editDurationValue, setEditDurationValue] = useState('');
+  const [resources, setResources] = useState([]);
 
   useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
-    try { setLoading(true); const [a,b] = await Promise.all([getTemplates(),getProjects()]); setTemplates(a||[]); setProjects(b||[]); }
+    try { setLoading(true); const [a,b,c] = await Promise.all([getTemplates(),getProjects(),getResources()]); setTemplates(a||[]); setProjects(b||[]); setResources(c||[]); }
     catch(e){console.error(e);} finally{setLoading(false);}
   };
   const refreshTemplate = async (id, updateDesc=true) => { try{const t=await getTemplate(id);setEditingTemplate(t);if(updateDesc)setEditDesc(t.description||'');}catch{} };
@@ -90,6 +92,16 @@ export default function TemplateLibrary() {
       alert(e.response?.data?.error || e.message);
     } finally {
       setEditingDurationId(null);
+    }
+  };
+
+  const handleResourceChange = async (task, role) => {
+    if (!editingTemplate || !task) return;
+    try {
+      await updateTemplateTask(editingTemplate.id, task.id, { resource_names: role || null });
+      await refreshTemplate(editingTemplate.id, false);
+    } catch (e) {
+      alert(e.response?.data?.error || e.message);
     }
   };
 
@@ -271,6 +283,12 @@ export default function TemplateLibrary() {
                       <span className="text-xs text-gray-400 shrink-0 mr-2">{children.reduce((s,c)=>s+(c.duration_days||0),0)}d</span>
                       {children.length>0&&<span className="text-xs text-amber-400 mr-3">· {children.length} 子任务</span>}
                       <span className="text-xs bg-amber-100 text-amber-600 px-1.5 rounded mr-2">里程碑</span>
+                      <select className="text-xs border rounded px-1 py-0.5 mr-1 max-w-[100px] truncate bg-white"
+                        value={m.resource_names||''} onClick={e=>e.stopPropagation()}
+                        onChange={e=>handleResourceChange(m, e.target.value)}>
+                        <option value="">资源</option>
+                        {resources.filter(r=>r.role).map(r=><option key={r.id} value={r.role}>{r.role}</option>)}
+                      </select>
                       <button className="text-xs text-gray-400 hover:text-gray-700 opacity-0 group-hover:opacity-100 mr-1" onClick={e=>{e.stopPropagation();handleRestructure(m,'convert');}}>🔄</button>
                       <button className="text-xs text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100" onClick={e=>{e.stopPropagation();handleDeleteTask(m.id);}}>✕</button>
                     </div>
@@ -297,6 +315,12 @@ export default function TemplateLibrary() {
                               onClick={e=>{e.stopPropagation();setEditingDurationId(child.id);setEditDurationValue(String(child.duration_days||1));}} title="点击编辑工期">{child.duration_days||1}d</span>
                           )}
                           <span className="text-xs text-gray-400 w-24 text-right mr-3 shrink-0">Day {(child.relative_start||0)+1} ~ {(child.relative_end||0)+1}</span>
+                          <select className="text-xs border rounded px-1 py-0.5 mr-1 max-w-[100px] truncate bg-white"
+                            value={child.resource_names||''} onClick={e=>e.stopPropagation()}
+                            onChange={e=>handleResourceChange(child, e.target.value)}>
+                            <option value="">资源</option>
+                            {resources.filter(r=>r.role).map(r=><option key={r.id} value={r.role}>{r.role}</option>)}
+                          </select>
                           <select value={child.parent_id||''} onClick={e=>e.stopPropagation()} onChange={e=>handleRestructure(child,'move',e.target.value?Number(e.target.value):null)}
                             className="text-xs border rounded px-1 py-0.5 mr-1 opacity-0 group-hover:opacity-100 bg-white">
                             <option value="">无归属</option>
@@ -336,6 +360,12 @@ export default function TemplateLibrary() {
                         <span className="text-xs text-gray-400 cursor-pointer hover:text-blue-600 shrink-0 mr-2"
                           onClick={e=>{e.stopPropagation();setEditingDurationId(task.id);setEditDurationValue(String(task.duration_days||1));}} title="点击编辑工期">{task.duration_days||1}d</span>
                       )}
+                      <select className="text-xs border rounded px-1 py-0.5 mr-1 max-w-[100px] truncate bg-white"
+                        value={task.resource_names||''} onClick={e=>e.stopPropagation()}
+                        onChange={e=>handleResourceChange(task, e.target.value)}>
+                        <option value="">资源</option>
+                        {resources.filter(r=>r.role).map(r=><option key={r.id} value={r.role}>{r.role}</option>)}
+                      </select>
                       {msOptions.length>0&&(
                         <select value={task.parent_id||''} onClick={e=>e.stopPropagation()} onChange={e=>handleRestructure(task,'move',e.target.value?Number(e.target.value):null)}
                           className="text-xs border rounded px-1 py-0.5 mr-1 opacity-0 group-hover:opacity-100 bg-white">
