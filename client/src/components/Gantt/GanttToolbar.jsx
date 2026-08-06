@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 
-export default function GanttToolbar({ onAddTask, onDelete, onRefresh, onSaveTemplate, onImportTemplate, onMoveUp, onMoveDown }) {
+export default function GanttToolbar({ onAddTask, onDelete, onRefresh, onSaveTemplate, onImportTemplate, onMoveUp, onMoveDown, onExportPdf, onExportExcel }) {
   const { t } = useTranslation();
 
   return (
@@ -25,6 +25,11 @@ export default function GanttToolbar({ onAddTask, onDelete, onRefresh, onSaveTem
       </div>
 
       <div className="flex items-center gap-2">
+        <button onClick={onExportPdf}
+          className="px-2.5 py-1.5 text-xs text-gray-600 hover:bg-gray-100 rounded-md" title="导出 PDF">📄 PDF</button>
+        <button onClick={onExportExcel}
+          className="px-2.5 py-1.5 text-xs text-gray-600 hover:bg-gray-100 rounded-md" title="导出 Excel">📊 Excel</button>
+        <div className="w-px h-5 bg-gray-200" />
         <button onClick={onRefresh}
           className="px-2.5 py-1.5 text-xs text-gray-500 hover:bg-gray-100 rounded-md" title="刷新">↻</button>
         <button onClick={onImportTemplate}

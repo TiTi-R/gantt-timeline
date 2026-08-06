@@ -371,6 +371,15 @@ export default function GanttContainer() {
     return () => window.removeEventListener('keydown', h);
   }, [editTask]);
 
+  const handleExportPdf = () => {
+    if (!pid) return;
+    window.open(`/api/projects/${pid}/export/pdf`, '_blank');
+  };
+  const handleExportExcel = () => {
+    if (!pid) return;
+    window.open(`/api/projects/${pid}/export/xlsx`, '_blank');
+  };
+
   // -----------------------------------------------------------
   //  Render
   // -----------------------------------------------------------
@@ -444,6 +453,8 @@ export default function GanttContainer() {
         onRefresh={loadAll}
         onSaveTemplate={() => { setTplName(project?.name || ''); setTplDesc(project?.description || ''); setSaveTplModal(true); }}
         onImportTemplate={openImport}
+        onExportPdf={handleExportPdf}
+        onExportExcel={handleExportExcel}
       />
 
       {/* Gantt area */}
