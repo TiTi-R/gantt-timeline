@@ -89,7 +89,7 @@ export default function TaskEditModal({ projectId, task, onClose, onSaved }) {
       };
       if (isNew) { if (task?.parent) data.parent_id = task.parent; await createTask(projectId, data); }
       else { await updateTask(task.id, data); }
-      onSaved();
+      onSaved(data);
     } catch (e) { alert('Failed: ' + (e.response?.data?.error || e.message)); }
     finally { setSaving(false); }
   };

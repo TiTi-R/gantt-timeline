@@ -323,7 +323,36 @@ export default function GanttContainer() {
     finally { setAddingNew(false); }
   };
 
-  const handleTaskSaved = () => { setEditTask(null); loadAll(); };
+  const handleTaskSaved = async (savedData) => {
+    // If editing a milestone with children, shift children by same delta
+    if (editTask && editTask.type === 'milestone' && savedData?.start_date && project?.tasks) {
+      const children = project.tasks.filter(t => t.parent_id === editTask.id);
+      if (children.length > 0) {
+        const childStarts = children.map(c => c.start_date).filter(Boolean).sort();
+        if (childStarts.length > 0) {
+          const oldMsStart = childStarts[0];
+          const delta = Math.round((new Date(savedData.start_date + 'T00:00:00') - new Date(oldMsStart + 'T00:00:00')) / 86400000);
+          if (delta !== 0) {
+            const fmt = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+            for (const child of children) {
+              if (!child.start_date || !child.end_date) continue;
+              const cs = new Date(child.start_date + 'T00:00:00');
+              cs.setDate(cs.getDate() + delta);
+              const ce = new Date(child.end_date + 'T00:00:00');
+              ce.setDate(ce.getDate() + delta);
+              await updateTask(child.id, {
+                start_date: fmt(cs),
+                end_date: fmt(ce),
+                duration_days: Math.max(1, Math.round((ce - cs) / 86400000)),
+              });
+            }
+          }
+        }
+      }
+    }
+    setEditTask(null);
+    loadAll();
+  };
 
   // Resource role handling
   const handleRoleToggle = async (taskId, role) => {
