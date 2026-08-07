@@ -205,6 +205,16 @@ export async function initDb() {
     console.warn('Cleanup warning:', e.message);
   }
 
+  // Migration: add status column to templates if missing
+  try {
+    sqlDb.exec("ALTER TABLE templates ADD COLUMN status TEXT DEFAULT 'draft'");
+    db.saveToDisk();
+  } catch (e) {
+    if (!e.message.includes('duplicate') && !e.message.includes('already exists')) {
+      console.warn('Migration warning:', e.message);
+    }
+  }
+
   return db;
 }
 

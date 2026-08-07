@@ -105,6 +105,7 @@ CREATE TABLE IF NOT EXISTS templates (
     phase_name      TEXT,
     task_count      INTEGER DEFAULT 0,
     total_duration  INTEGER,
+    status          TEXT DEFAULT 'draft',
     created_at      TEXT DEFAULT (datetime('now')),
     updated_at      TEXT DEFAULT (datetime('now'))
 );
