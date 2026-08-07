@@ -116,7 +116,16 @@ router.get('/projects/:id/export/pdf', (req, res) => {
     cols.push({ key: 'person', title: '负责人', width: 140 });
   }
 
-  const doc = new PDFDocument({ size: 'A4', margin: 30, layout: 'landscape' });
+  const withGantt = req.query.gantt === '1';
+  // A4 portrait: 595pt - 60pt margins = 535pt usable; landscape: 842 - 60 = 782pt
+  const maxTableWidth = withGantt ? 782 : 535;
+  const tableWidth = cols.reduce((s, c) => s + c.width, 0);
+  if (tableWidth > maxTableWidth) {
+    const scale = maxTableWidth / tableWidth;
+    cols.forEach(c => { c.width = Math.floor(c.width * scale); });
+  }
+
+  const doc = new PDFDocument({ size: 'A4', margin: 30, layout: withGantt ? 'landscape' : 'portrait' });
 
   // Register Chinese font to avoid garbled text
   try { doc.registerFont('SimHei', 'C:/Windows/Fonts/simhei.ttf'); } catch {}
@@ -152,7 +161,11 @@ router.get('/projects/:id/export/pdf', (req, res) => {
   // ── Summary row (总工期) ──
   const label = req.query.label || '总工期';
   const summary = calcSummary(sorted);
-  doc.rect(30, y, cols.reduce((s, c) => s + c.width, 0), rowH).fill('#eef2ff');
+  doc.font(f).fontSize(8);
+  const labelH = doc.heightOfString(label, { width: cols[0].width - 8 });
+  const summaryH = Math.max(rowH, labelH + 2);
+
+  doc.rect(30, y, cols.reduce((s, c) => s + c.width, 0), summaryH).fill('#eef2ff');
   doc.fillColor('#1e3a5f').fontSize(8);
   x = 30;
   cols.forEach(c => {
@@ -165,51 +178,50 @@ router.get('/projects/:id/export/pdf', (req, res) => {
       case 'role':
       case 'person': val = ''; break;
     }
-    doc.font(f).text(val, x + 4, y + 4, { width: c.width - 8, align: c.align || 'left' });
+    doc.font(f).text(val, x + 4, y + 2, { width: c.width - 8, align: c.align || 'left' });
     x += c.width;
   });
-  y += rowH;
+  y += summaryH;
 
   // ── Task rows ──
   sorted.forEach((t, i) => {
-    if (y + rowH > doc.page.height - 220) {
+    // Compute column values and measure name height for wrapping
+    let prefix = '';
+    if (t.is_milestone) prefix = '◆ ';
+    else if (t.parent_id) prefix = '    ';
+    const nameText = prefix + (t.name || '');
+    const nameColWidth = cols[0].width - 8;
+    doc.font(f).fontSize(8);
+    const measuredH = doc.heightOfString(nameText, { width: nameColWidth });
+    const actualH = Math.max(rowH, measuredH + 2); // +2 padding
+
+    if (y + actualH > doc.page.height - (withGantt ? 250 : 40)) {
       doc.addPage();
       y = 30;
     }
     // Alternate row color
     if (i % 2 === 0) {
-      doc.rect(30, y, cols.reduce((s, c) => s + c.width, 0), rowH).fill('#f7f8fa');
+      doc.rect(30, y, cols.reduce((s, c) => s + c.width, 0), actualH).fill('#f7f8fa');
     }
     doc.fillColor('#333').fontSize(8);
-
-    let prefix = '';
-    if (t.is_milestone) prefix = '◆ ';
-    else if (t.parent_id) prefix = '    ';
-    const name = prefix + (t.name || '');
 
     x = 30;
     cols.forEach(c => {
       let val = '';
       switch (c.key) {
-        case 'name':
-          val = name; break;
-        case 'start_date':
-          val = fmtDate(t.start_date); break;
-        case 'end_date':
-          val = fmtDate(t.end_date); break;
-        case 'duration':
-          val = String(Math.max(0, t.duration_days || 0)); break;
-        case 'role':
-          val = t.resource_names || ''; break;
-        case 'person':
-          val = t.resource_person_names || ''; break;
+        case 'name': val = nameText; break;
+        case 'start_date': val = fmtDate(t.start_date); break;
+        case 'end_date': val = fmtDate(t.end_date); break;
+        case 'duration': val = String(Math.max(0, t.duration_days || 0)); break;
+        case 'role': val = t.resource_names || ''; break;
+        case 'person': val = t.resource_person_names || ''; break;
       }
       const opts = { width: c.width - 8, align: c.align || 'left' };
-      doc.font(f).text(val, x + 4, y + 4, opts);
+      doc.font(f).text(val, x + 4, y + 2, opts);
       x += c.width;
     });
 
-    y += rowH;
+    y += actualH;
   });
 
   // ── Gantt chart (optional) ───────────────────────────────────
@@ -229,8 +241,8 @@ router.get('/projects/:id/export/pdf', (req, res) => {
       const nameWidth = 200;
       const chartLeft = 30 + nameWidth;
       const chartAreaWidth = cols.reduce((s, c) => s + c.width, 0) - nameWidth;
-      const dayW = Math.max(2, Math.min(12, chartAreaWidth / chartDays));
-      const totalChartWidth = chartDays * dayW;
+      const dayW = chartAreaWidth / chartDays; // can be <1 for long timelines
+      const totalChartWidth = chartAreaWidth; // always fits within available width
       const ganttRowH = 16;
 
       // Month headers
