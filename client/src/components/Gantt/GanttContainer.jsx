@@ -371,15 +371,17 @@ export default function GanttContainer() {
     return () => window.removeEventListener('keydown', h);
   }, [editTask]);
 
-  const handleExportPdf = () => {
+  // Export flow
+  const [exportModal, setExportModal] = useState(null); // 'pdf' | 'xlsx' | null
+  const [exportWithGantt, setExportWithGantt] = useState(false);
+
+  const handleExportPdf = () => { setExportWithGantt(false); setExportModal('pdf'); };
+  const handleExportExcel = () => { setExportWithGantt(false); setExportModal('xlsx'); };
+  const doExport = () => {
     if (!pid) return;
     const label = encodeURIComponent(totalLabel || '总工期');
-    window.open(`/api/projects/${pid}/export/pdf?label=${label}`, '_blank');
-  };
-  const handleExportExcel = () => {
-    if (!pid) return;
-    const label = encodeURIComponent(totalLabel || '总工期');
-    window.open(`/api/projects/${pid}/export/xlsx?label=${label}`, '_blank');
+    window.open(`/api/projects/${pid}/export/${exportModal}?label=${label}&gantt=${exportWithGantt ? 1 : 0}`, '_blank');
+    setExportModal(null);
   };
 
   // -----------------------------------------------------------
@@ -691,6 +693,30 @@ export default function GanttContainer() {
               </button>
               <button onClick={() => setImportModal(false)}
                 className="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200">{t('cancel')}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Export Options Modal */}
+      {exportModal && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" onClick={() => setExportModal(null)}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+            <h3 className="font-semibold text-gray-800 text-lg mb-4">导出{exportModal === 'pdf' ? 'PDF' : 'Excel'}</h3>
+            <label className="flex items-center gap-3 cursor-pointer py-2">
+              <input type="checkbox" checked={exportWithGantt}
+                onChange={e => setExportWithGantt(e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+              <div>
+                <span className="text-sm font-medium text-gray-700">包含甘特图</span>
+                <p className="text-xs text-gray-400">在表格下方附加甘特图条形图</p>
+              </div>
+            </label>
+            <div className="flex gap-2 mt-5 justify-end">
+              <button onClick={() => setExportModal(null)}
+                className="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200">取消</button>
+              <button onClick={doExport}
+                className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">导出</button>
             </div>
           </div>
         </div>

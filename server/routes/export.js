@@ -68,6 +68,22 @@ const deriveMilestoneDates = (tasks) => {
   });
 };
 
+const dayOfYear = (dateStr) => {
+  const d = new Date(dateStr + 'T00:00:00');
+  const yearStart = new Date(d.getFullYear(), 0, 1);
+  return Math.floor((d - yearStart) / 86400000) + 1;
+};
+
+const daysBetween = (a, b) => {
+  return Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000);
+};
+
+const ganttBarColor = (t) => {
+  if (t.is_milestone) return '#f59e0b';
+  if (t.parent_id) return '#4472C4';
+  return '#8b5cf6';
+};
+
 // ── PDF Export ─────────────────────────────────────────────────
 
 router.get('/projects/:id/export/pdf', (req, res) => {
@@ -149,7 +165,7 @@ router.get('/projects/:id/export/pdf', (req, res) => {
 
   // ── Task rows ──
   sorted.forEach((t, i) => {
-    if (y + rowH > doc.page.height - 40) {
+    if (y + rowH > doc.page.height - 220) {
       doc.addPage();
       y = 30;
     }
@@ -188,6 +204,84 @@ router.get('/projects/:id/export/pdf', (req, res) => {
 
     y += rowH;
   });
+
+  // ── Gantt chart (optional) ───────────────────────────────────
+  if (req.query.gantt === '1') {
+    y += 12;
+    doc.fillColor('#333').fontSize(11).font(f).text('甘特图', 30, y);
+    y += 20;
+
+    // Date range for chart (use all tasks including milestones)
+    const allWithDates = sorted.filter(t => t.start_date && t.end_date);
+    if (allWithDates.length === 0) {
+      doc.fillColor('#999').fontSize(9).text('暂无数据', 30, y);
+    } else {
+      const chartStart = allWithDates.reduce((min, t) => t.start_date < min ? t.start_date : min, allWithDates[0].start_date);
+      const chartEnd = allWithDates.reduce((max, t) => t.end_date > max ? t.end_date : max, allWithDates[0].end_date);
+      const chartDays = daysBetween(chartStart, chartEnd) + 1;
+      const nameWidth = 200;
+      const chartLeft = 30 + nameWidth;
+      const chartAreaWidth = cols.reduce((s, c) => s + c.width, 0) - nameWidth;
+      const dayW = Math.max(2, Math.min(12, chartAreaWidth / chartDays));
+      const totalChartWidth = chartDays * dayW;
+      const ganttRowH = 16;
+
+      // Month headers
+      doc.fontSize(7).fillColor('#666');
+      let monthX = chartLeft;
+      let prevMonth = '';
+      const sDate = new Date(chartStart + 'T00:00:00');
+      for (let d = 0; d < chartDays; d++) {
+        const cur = new Date(sDate);
+        cur.setDate(cur.getDate() + d);
+        const monthLabel = (cur.getMonth() + 1) + '月';
+        if (monthLabel !== prevMonth) {
+          doc.text(monthLabel, monthX, y, { width: dayW * (chartDays - d), align: 'left' });
+          prevMonth = monthLabel;
+        }
+        monthX += dayW;
+      }
+      y += 12;
+
+      // Day ticks (every 5th day)
+      doc.fontSize(6).fillColor('#999');
+      for (let d = 0; d < chartDays; d += 5) {
+        const cur = new Date(sDate);
+        cur.setDate(cur.getDate() + d);
+        doc.text(String(cur.getDate()), chartLeft + d * dayW, y, { width: dayW * 5, align: 'center' });
+      }
+      y += 8;
+
+      // Task bars
+      sorted.forEach(t => {
+        if (!t.start_date || !t.end_date) return;
+        if (y + ganttRowH > doc.page.height - 30) { doc.addPage(); y = 30; }
+
+        const offset = daysBetween(chartStart, t.start_date);
+        const dur = daysBetween(t.start_date, t.end_date);
+        const barW = Math.max(1, dur * dayW);
+        const barX = chartLeft + offset * dayW;
+        const color = ganttBarColor(t);
+
+        // Task name (left side)
+        let taskLabel = t.name || '';
+        if (t.is_milestone) taskLabel = '◆ ' + taskLabel;
+        else if (t.parent_id) taskLabel = '    ' + taskLabel;
+        doc.fillColor('#333').fontSize(7).font(f);
+        doc.text(taskLabel, 30, y + 2, { width: nameWidth - 6, height: ganttRowH, ellipsis: true });
+
+        // Bar
+        doc.rect(barX, y + 2, Math.max(barW, 5), ganttRowH - 4).fill(color);
+        // Duration label inside bar
+        if (barW > 20) {
+          doc.fillColor('#fff').fontSize(6).font(f);
+          doc.text(String(t.duration_days || dur) + 'd', barX + 2, y + 3, { width: barW - 4, align: 'center' });
+        }
+
+        y += ganttRowH;
+      });
+    }
+  }
 
   doc.end();
 });
@@ -276,6 +370,83 @@ router.get('/projects/:id/export/xlsx', async (req, res) => {
   ws.getColumn(5).width = 24;
   ws.getColumn(6).width = 24;
   ws.getColumn(7).width = 28;
+
+  // ── Gantt chart sheet (optional) ──────────────────────────────
+  if (req.query.gantt === '1') {
+    const gs = wb.addWorksheet('甘特图');
+
+    const allWithDates = sorted.filter(t => t.start_date && t.end_date);
+    if (allWithDates.length > 0) {
+      const chartStart = allWithDates.reduce((min, t) => t.start_date < min ? t.start_date : min, allWithDates[0].start_date);
+      const chartEnd = allWithDates.reduce((max, t) => t.end_date > max ? t.end_date : max, allWithDates[0].end_date);
+      const chartDays = daysBetween(chartStart, chartEnd) + 1;
+      const sDate = new Date(chartStart + 'T00:00:00');
+
+      // Row 1: Month headers
+      const monthRow = gs.addRow([]);
+      monthRow.getCell(1).value = '';
+      gs.getColumn(1).width = 44;
+      let colIdx = 2;
+      let prevMonth = '';
+      for (let d = 0; d < chartDays; d++) {
+        const cur = new Date(sDate);
+        cur.setDate(cur.getDate() + d);
+        const monthLabel = (cur.getMonth() + 1) + '月';
+        const cell = monthRow.getCell(colIdx);
+        if (monthLabel !== prevMonth) {
+          cell.value = monthLabel;
+          cell.font = { size: 8, color: { argb: 'FF666666' } };
+          prevMonth = monthLabel;
+        } else {
+          cell.value = null;
+        }
+        colIdx++;
+      }
+
+      // Row 2: Day numbers
+      const dayRow = gs.addRow([]);
+      dayRow.getCell(1).value = '';
+      colIdx = 2;
+      for (let d = 0; d < chartDays; d++) {
+        const cur = new Date(sDate);
+        cur.setDate(cur.getDate() + d);
+        const cell = dayRow.getCell(colIdx);
+        if (d % 5 === 0) {
+          cell.value = cur.getDate();
+          cell.font = { size: 7, color: { argb: 'FF999999' } };
+        }
+        cell.alignment = { horizontal: 'center' };
+        gs.getColumn(colIdx).width = 3;
+        colIdx++;
+      }
+
+      // Task rows
+      sorted.forEach(t => {
+        if (!t.start_date || !t.end_date) return;
+        const offset = daysBetween(chartStart, t.start_date);
+        const dur = daysBetween(t.start_date, t.end_date);
+        const color = ganttBarColor(t);
+        const argbColor = color.replace('#', 'FF').toUpperCase();
+
+        const row = gs.addRow([]);
+        row.height = 16;
+
+        // Task name
+        let taskLabel = t.name || '';
+        if (t.is_milestone) taskLabel = '◆ ' + taskLabel;
+        else if (t.parent_id) taskLabel = '    ' + taskLabel;
+        row.getCell(1).value = taskLabel;
+        row.getCell(1).font = { size: 9, bold: !!t.is_milestone };
+        row.getCell(1).alignment = { vertical: 'middle', wrapText: true, indent: t._depth };
+
+        // Fill bars
+        for (let d = 0; d < dur; d++) {
+          const cell = row.getCell(2 + offset + d);
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: argbColor } };
+        }
+      });
+    }
+  }
 
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(project.name)}.xlsx"`);
