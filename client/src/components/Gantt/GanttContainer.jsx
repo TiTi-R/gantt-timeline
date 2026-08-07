@@ -373,11 +373,13 @@ export default function GanttContainer() {
 
   const handleExportPdf = () => {
     if (!pid) return;
-    window.open(`/api/projects/${pid}/export/pdf`, '_blank');
+    const label = encodeURIComponent(totalLabel || '总工期');
+    window.open(`/api/projects/${pid}/export/pdf?label=${label}`, '_blank');
   };
   const handleExportExcel = () => {
     if (!pid) return;
-    window.open(`/api/projects/${pid}/export/xlsx`, '_blank');
+    const label = encodeURIComponent(totalLabel || '总工期');
+    window.open(`/api/projects/${pid}/export/xlsx?label=${label}`, '_blank');
   };
 
   // -----------------------------------------------------------

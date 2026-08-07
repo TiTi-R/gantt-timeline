@@ -47,6 +47,27 @@ const calcSummary = (tasks) => {
   return { start: fmtDate(s), end: fmtDate(e), total: days };
 };
 
+const deriveMilestoneDates = (tasks) => {
+  const childrenByParent = {};
+  tasks.forEach(t => {
+    if (t.parent_id) {
+      if (!childrenByParent[t.parent_id]) childrenByParent[t.parent_id] = [];
+      childrenByParent[t.parent_id].push(t);
+    }
+  });
+  tasks.forEach(t => {
+    if (t.is_milestone) {
+      const children = childrenByParent[t.id];
+      if (children && children.length > 0) {
+        const starts = children.map(c => c.start_date).filter(Boolean).sort();
+        const ends = children.map(c => c.end_date).filter(Boolean).sort();
+        if (starts.length > 0) t.start_date = starts[0];
+        if (ends.length > 0) t.end_date = ends[ends.length - 1];
+      }
+    }
+  });
+};
+
 // ── PDF Export ─────────────────────────────────────────────────
 
 router.get('/projects/:id/export/pdf', (req, res) => {
@@ -55,6 +76,7 @@ router.get('/projects/:id/export/pdf', (req, res) => {
   if (!project) return res.status(404).json({ error: 'Project not found' });
 
   const tasks = db.prepare('SELECT * FROM tasks WHERE project_id = ? ORDER BY sort_order').all(req.params.id);
+  deriveMilestoneDates(tasks);
   const sorted = treeSort(tasks);
 
   // Determine if person column can be skipped
@@ -72,13 +94,18 @@ router.get('/projects/:id/export/pdf', (req, res) => {
   }
 
   const doc = new PDFDocument({ size: 'A4', margin: 30, layout: 'landscape' });
+
+  // Register Chinese font to avoid garbled text
+  try { doc.registerFont('SimHei', 'C:/Windows/Fonts/simhei.ttf'); } catch {}
+  const f = 'SimHei';
+
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(project.name)}.pdf"`);
   doc.pipe(res);
 
   // Title
-  doc.fontSize(14).font('Helvetica-Bold').text(project.name || 'Project', { align: 'left' });
-  doc.fontSize(9).font('Helvetica').fillColor('#666').text(`导出时间: ${new Date().toISOString().split('T')[0]}`, { align: 'left' });
+  doc.fontSize(14).font(f).text(project.name || 'Project', { align: 'left' });
+  doc.fontSize(9).fillColor('#666').text(`导出时间: ${new Date().toISOString().split('T')[0]}`, { align: 'left' });
   doc.moveDown(0.5);
 
   const tableTop = doc.y;
@@ -87,34 +114,35 @@ router.get('/projects/:id/export/pdf', (req, res) => {
 
   // Header background
   doc.rect(30, tableTop, cols.reduce((s, c) => s + c.width, 0), headerH).fill('#4472C4');
-  doc.fillColor('#fff').fontSize(9).font('Helvetica-Bold');
+  doc.fillColor('#fff').fontSize(9);
 
   let x = 30;
   cols.forEach(c => {
-    doc.text(c.title, x + 4, tableTop + 5, { width: c.width - 8, align: c.align || 'left' });
+    doc.font(f).text(c.title, x + 4, tableTop + 5, { width: c.width - 8, align: c.align || 'left' });
     x += c.width;
   });
 
   // Rows
   let y = tableTop + headerH;
-  doc.fillColor('#333').font('Helvetica').fontSize(8);
+  doc.fillColor('#333').fontSize(8);
 
   // ── Summary row (总工期) ──
+  const label = req.query.label || '总工期';
   const summary = calcSummary(sorted);
   doc.rect(30, y, cols.reduce((s, c) => s + c.width, 0), rowH).fill('#eef2ff');
-  doc.fillColor('#1e3a5f').font('Helvetica-Bold').fontSize(8);
+  doc.fillColor('#1e3a5f').fontSize(8);
   x = 30;
   cols.forEach(c => {
     let val = '';
     switch (c.key) {
-      case 'name': val = '总工期'; break;
+      case 'name': val = label; break;
       case 'start_date': val = summary.start; break;
       case 'end_date': val = summary.end; break;
       case 'duration': val = String(summary.total); break;
       case 'role':
       case 'person': val = ''; break;
     }
-    doc.text(val, x + 4, y + 4, { width: c.width - 8, align: c.align || 'left' });
+    doc.font(f).text(val, x + 4, y + 4, { width: c.width - 8, align: c.align || 'left' });
     x += c.width;
   });
   y += rowH;
@@ -129,11 +157,11 @@ router.get('/projects/:id/export/pdf', (req, res) => {
     if (i % 2 === 0) {
       doc.rect(30, y, cols.reduce((s, c) => s + c.width, 0), rowH).fill('#f7f8fa');
     }
-    doc.fillColor('#333').font('Helvetica').fontSize(8);
+    doc.fillColor('#333').fontSize(8);
 
     let prefix = '';
     if (t.is_milestone) prefix = '◆ ';
-    else if (t.parent_id) prefix = '  ↳ ';
+    else if (t.parent_id) prefix = '    ';
     const name = prefix + (t.name || '');
 
     x = 30;
@@ -154,9 +182,7 @@ router.get('/projects/:id/export/pdf', (req, res) => {
           val = t.resource_person_names || ''; break;
       }
       const opts = { width: c.width - 8, align: c.align || 'left' };
-      if (t.is_milestone) doc.font('Helvetica-Bold');
-      else doc.font('Helvetica');
-      doc.text(val, x + 4, y + 4, opts);
+      doc.font(f).text(val, x + 4, y + 4, opts);
       x += c.width;
     });
 
@@ -174,6 +200,7 @@ router.get('/projects/:id/export/xlsx', async (req, res) => {
   if (!project) return res.status(404).json({ error: 'Project not found' });
 
   const tasks = db.prepare('SELECT * FROM tasks WHERE project_id = ? ORDER BY sort_order').all(req.params.id);
+  deriveMilestoneDates(tasks);
   const sorted = treeSort(tasks);
 
   const wb = new ExcelJS.Workbook();
@@ -200,8 +227,9 @@ router.get('/projects/:id/export/xlsx', async (req, res) => {
   headerRow.height = 20;
 
   // ── Summary row (总工期) ──
+  const label = req.query.label || '总工期';
   const summary = calcSummary(sorted);
-  const summaryRow = ws.addRow(['总工期', summary.start, summary.end, summary.total, '', '', '']);
+  const summaryRow = ws.addRow([label, summary.start, summary.end, summary.total, '', '', '']);
   summaryRow.eachCell((cell, colNum) => {
     cell.font = { bold: true, size: 10, color: { argb: 'FF1e3a5f' } };
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFeef2ff' } };
