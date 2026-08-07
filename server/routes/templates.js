@@ -227,7 +227,9 @@ function autoSchedule(db, templateId) {
     if (msDuration > 0) {
       updateTask.run(0, msDuration - 1, msDuration, m.id);
     } else {
-      updateTask.run(0, 0, 0, m.id);
+      // Keep milestone's own duration_days when there are no children
+      const ownDur = Math.max(0, m.duration_days || 0);
+      updateTask.run(0, Math.max(0, ownDur - 1), ownDur, m.id);
     }
 
     let childDay = 0;

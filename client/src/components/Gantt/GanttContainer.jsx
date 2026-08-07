@@ -19,6 +19,8 @@ export default function GanttContainer() {
   const pid = Number(id);
 
   const [project, setProject] = useState(null);
+  const projectRef = useRef(null);
+  useEffect(() => { projectRef.current = project; }, [project]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editTask, setEditTask] = useState(null);
@@ -98,15 +100,40 @@ export default function GanttContainer() {
     setEditingTotal(false);
   };
 
-  // Compute summary from tasks directly
+  // Compute summary from tasks, deriving milestone dates from children
   const summary = useMemo(() => {
     const tasks = project?.tasks;
     if (!tasks?.length) return { start: 'NA', end: 'NA', total: 0 };
-    const starts = tasks.map(t => t.start_date).filter(Boolean).sort();
-    const ends = tasks.map(t => t.end_date).filter(Boolean).sort();
+
+    // Derive milestone dates from children for summary calc
+    const childrenMap = {};
+    tasks.forEach(t => {
+      if (t.parent_id) {
+        if (!childrenMap[t.parent_id]) childrenMap[t.parent_id] = [];
+        childrenMap[t.parent_id].push(t);
+      }
+    });
+
+    const starts = [];
+    const ends = [];
+    tasks.forEach(t => {
+      if (t.is_milestone && childrenMap[t.id]?.length) {
+        const kids = childrenMap[t.id];
+        const kidStarts = kids.map(c => c.start_date).filter(Boolean).sort();
+        const kidEnds = kids.map(c => c.end_date).filter(Boolean).sort();
+        if (kidStarts.length > 0) starts.push(kidStarts[0]);
+        if (kidEnds.length > 0) ends.push(kidEnds[kidEnds.length - 1]);
+      } else {
+        if (t.start_date) starts.push(t.start_date);
+        if (t.end_date) ends.push(t.end_date);
+      }
+    });
+
+    starts.sort();
+    ends.sort();
     const s = starts[0] || '';
     const e = ends[ends.length - 1] || '';
-    const days = s && e ? Math.round((new Date(e) - new Date(s)) / 86400000) + 1 : 0;
+    const days = s && e ? Math.round((new Date(e + 'T00:00:00') - new Date(s + 'T00:00:00')) / 86400000) + 1 : 0;
     return { start: s, end: e, total: days };
   }, [project?.tasks]);
 
@@ -143,13 +170,47 @@ export default function GanttContainer() {
       try {
         const fmt = (d) => d ? d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0') : '';
         const startVal = fmt(item.start_date);
-        // end_date was shifted +1 in the backend — subtract 1 day back
         const endDate = new Date(item.end_date);
         endDate.setDate(endDate.getDate() - 1);
         const endVal = fmt(endDate);
         const dur = Math.round((item.end_date - item.start_date) / 86400000);
+
+        const g = getGantt();
+        const ganttTask = g ? g.getTask(taskId) : null;
+
+        // If milestone with children, shift children first, then reload
+        if (ganttTask && ganttTask.type === 'milestone') {
+          const allTasks = projectRef.current?.tasks;
+          if (allTasks) {
+            const children = allTasks.filter(t => t.parent_id === taskId);
+            if (children.length > 0) {
+              const childStarts = children.map(c => c.start_date).filter(Boolean).sort();
+              if (childStarts.length > 0) {
+                const oldMsStart = childStarts[0];
+                const delta = Math.round((new Date(startVal + 'T00:00:00') - new Date(oldMsStart + 'T00:00:00')) / 86400000);
+                if (delta !== 0) {
+                  const fmt2 = (d) => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+                  for (const child of children) {
+                    if (!child.start_date || !child.end_date) continue;
+                    const cs = new Date(child.start_date + 'T00:00:00');
+                    cs.setDate(cs.getDate() + delta);
+                    const ce = new Date(child.end_date + 'T00:00:00');
+                    ce.setDate(ce.getDate() + delta);
+                    await updateTask(child.id, {
+                      start_date: fmt2(cs),
+                      end_date: fmt2(ce),
+                      duration_days: Math.max(1, Math.round((ce - cs) / 86400000)),
+                    });
+                  }
+                }
+              }
+            }
+          }
+          await loadAll();
+          return;
+        }
+
         await updateTask(taskId, { start_date: startVal, end_date: endVal, duration_days: Math.max(1, dur) });
-        // Update gantt display so "结束日期" column reflects the new end_date
         const gt = gantt.getTask(taskId);
         if (gt) { gt.real_end = endVal; gantt.updateTask(taskId); }
       } catch (ex) { console.error(ex); }

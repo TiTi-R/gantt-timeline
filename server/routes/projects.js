@@ -49,10 +49,32 @@ router.get('/:id', (req, res) => {
   }));
 
   // Auto-calc project dates from tasks & persist
+  // Derive milestone dates from children first
+  const childrenMap = {};
+  tasks.forEach(t => {
+    if (t.parent_id) {
+      if (!childrenMap[t.parent_id]) childrenMap[t.parent_id] = [];
+      childrenMap[t.parent_id].push(t);
+    }
+  });
   if (tasks.length > 0) {
-    const dates = tasks.map(t => t.start_date).filter(Boolean).sort();
-    const ends = tasks.map(t => t.end_date).filter(Boolean).sort();
-    const newStart = dates[0] || project.start_date;
+    const starts = [];
+    const ends = [];
+    tasks.forEach(t => {
+      if (t.is_milestone && childrenMap[t.id]?.length) {
+        const kids = childrenMap[t.id];
+        const kidStarts = kids.map(c => c.start_date).filter(Boolean).sort();
+        const kidEnds = kids.map(c => c.end_date).filter(Boolean).sort();
+        if (kidStarts.length > 0) starts.push(kidStarts[0]);
+        if (kidEnds.length > 0) ends.push(kidEnds[kidEnds.length - 1]);
+      } else {
+        if (t.start_date) starts.push(t.start_date);
+        if (t.end_date) ends.push(t.end_date);
+      }
+    });
+    starts.sort();
+    ends.sort();
+    const newStart = starts[0] || project.start_date;
     const newEnd = ends[ends.length - 1] || project.end_date;
     if (newStart !== project.start_date || newEnd !== project.end_date) {
       db.prepare('UPDATE projects SET start_date = ?, end_date = ?, updated_at = datetime("now") WHERE id = ?')
@@ -100,6 +122,9 @@ router.patch('/:id', (req, res) => {
 // Delete project
 router.delete('/:id', (req, res) => {
   const db = getDb();
+  db.prepare('DELETE FROM tasks WHERE project_id = ?').run(req.params.id);
+  db.prepare('DELETE FROM dependencies WHERE project_id = ?').run(req.params.id);
+  db.prepare('DELETE FROM project_files WHERE project_id = ?').run(req.params.id);
   db.prepare('DELETE FROM projects WHERE id = ?').run(req.params.id);
   res.json({ success: true });
 });

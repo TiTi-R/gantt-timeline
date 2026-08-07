@@ -11,6 +11,8 @@ export default function ResourceList() {
   const [editingId, setEditingId] = useState(null);
   const [editTags, setEditTags] = useState([]);
   const [editTagInput, setEditTagInput] = useState('');
+  const [sortKey, setSortKey] = useState(''); // '' | 'role' | 'count'
+  const [sortDir, setSortDir] = useState('asc'); // 'asc' | 'desc'
 
   useEffect(() => { loadResources(); }, []);
 
@@ -85,6 +87,35 @@ export default function ResourceList() {
     return names;
   };
 
+  const handleSort = (key) => {
+    if (sortKey === key) {
+      setSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  };
+
+  const sortIndicator = (key) => {
+    if (sortKey !== key) return '';
+    return sortDir === 'asc' ? ' ▲' : ' ▼';
+  };
+
+  const sortedResources = [...resources].sort((a, b) => {
+    if (!sortKey) return a.name.localeCompare(b.name);
+    if (sortKey === 'role') {
+      return sortDir === 'asc'
+        ? (a.role || '').localeCompare(b.role || '')
+        : (b.role || '').localeCompare(a.role || '');
+    }
+    if (sortKey === 'count') {
+      const ca = allNames(a).length;
+      const cb = allNames(b).length;
+      return sortDir === 'asc' ? ca - cb : cb - ca;
+    }
+    return 0;
+  });
+
   if (loading) return <div className="flex items-center justify-center h-full text-gray-400 animate-pulse">{t('loading')}</div>;
 
   return (
@@ -144,13 +175,15 @@ export default function ResourceList() {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 border-b">
-              <th className="text-left px-4 py-3 font-medium text-gray-600 w-48">角色</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">负责人</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600 w-48 cursor-pointer hover:text-blue-600 select-none"
+                onClick={() => handleSort('role')}>角色{sortIndicator('role')}</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600 cursor-pointer hover:text-blue-600 select-none"
+                onClick={() => handleSort('count')}>负责人{sortIndicator('count')}</th>
               <th className="text-right px-4 py-3 font-medium text-gray-600 w-20">{t('actions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {resources.map(r => {
+            {sortedResources.map(r => {
               const names = allNames(r);
               const isEditing = editingId === r.id;
               return (

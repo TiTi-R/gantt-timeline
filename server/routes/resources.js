@@ -67,10 +67,20 @@ router.patch('/:id', (req, res) => {
 // Delete resource
 router.delete('/:id', (req, res) => {
   const db = getDb();
-  const used = db.prepare('SELECT COUNT(*) as cnt FROM task_resources WHERE resource_id = ?').get(req.params.id);
-  if (used.cnt > 0) {
-    return res.status(400).json({ error: `Resource is assigned to ${used.cnt} task(s). Remove assignments first.` });
+  const resource = db.prepare('SELECT * FROM resources WHERE id = ?').get(req.params.id);
+  if (!resource) return res.status(404).json({ error: 'Resource not found' });
+
+  // Check resource_names on tasks that belong to existing projects
+  const rnCount = db.prepare(
+    "SELECT COUNT(*) as cnt FROM tasks t JOIN projects p ON t.project_id = p.id WHERE t.resource_names IS NOT NULL AND t.resource_names != '' AND (t.resource_names = ? OR t.resource_names LIKE ? OR t.resource_names LIKE ? OR t.resource_names LIKE ?)"
+  ).get(resource.role, resource.role + ',%', '%,' + resource.role + ',%', '%,' + resource.role);
+
+  if (rnCount?.cnt > 0) {
+    return res.status(400).json({ error: `该资源被 ${rnCount.cnt} 个任务使用，请先取消任务中的角色分配再删除` });
   }
+
+  // Clean legacy task_resources entries, then delete
+  db.prepare('DELETE FROM task_resources WHERE resource_id = ?').run(req.params.id);
   db.prepare('DELETE FROM resources WHERE id = ?').run(req.params.id);
   res.json({ success: true });
 });

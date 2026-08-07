@@ -194,6 +194,17 @@ export async function initDb() {
     }
   }
 
+  // Cleanup: delete orphaned tasks/dependencies/files with no project
+  try {
+    sqlDb.exec("DELETE FROM task_resources WHERE task_id IN (SELECT id FROM tasks WHERE project_id NOT IN (SELECT id FROM projects))");
+    sqlDb.exec("DELETE FROM dependencies WHERE project_id NOT IN (SELECT id FROM projects)");
+    sqlDb.exec("DELETE FROM tasks WHERE project_id NOT IN (SELECT id FROM projects)");
+    sqlDb.exec("DELETE FROM project_files WHERE project_id NOT IN (SELECT id FROM projects)");
+    db.saveToDisk();
+  } catch (e) {
+    console.warn('Cleanup warning:', e.message);
+  }
+
   return db;
 }
 

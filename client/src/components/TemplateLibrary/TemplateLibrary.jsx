@@ -210,16 +210,14 @@ export default function TemplateLibrary() {
                   {msOptions.map(m=><option key={m.id} value={m.id}>◆ {m.name}</option>)}
                 </select></div>
               )}
-              <div className={editorForm.taskType==='milestone'?'col-span-9':(msOptions.length>0?'col-span-4':'col-span-5')}>
+              <div className={editorForm.taskType==='milestone'?'col-span-7':(msOptions.length>0?'col-span-4':'col-span-5')}>
                 <input className="w-full border rounded-lg px-3 py-1.5 text-sm" value={editorForm.name} onChange={e=>setEditorForm({...editorForm,name:e.target.value})}
                   placeholder={editorForm.taskType==='milestone'?'阶段名称':'任务名称'} onKeyDown={e=>{if(e.key==='Enter')handleAddTask();}}/>
               </div>
-              {editorForm.taskType==='task'&&(
-                <div className="col-span-2">
-                  <input type="number" min={0} className="w-full border rounded-lg px-2 py-1.5 text-sm" value={editorForm.duration_days}
-                    onChange={e=>setEditorForm({...editorForm,duration_days:e.target.value})}/>
-                </div>
-              )}
+              <div className="col-span-2">
+                <input type="number" min={0} className="w-full border rounded-lg px-2 py-1.5 text-sm" value={editorForm.duration_days}
+                  onChange={e=>setEditorForm({...editorForm,duration_days:e.target.value})}/>
+              </div>
               <div className="col-span-1">
                 <button onClick={handleAddTask} disabled={addingTask||!editorForm.name.trim()}
                   className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 disabled:opacity-50 font-bold">+</button>
@@ -245,7 +243,8 @@ export default function TemplateLibrary() {
                 {milestones.map(m=>{
                   const children = getChildren(m.id);
                   const childrenTotal = children.reduce((s,c)=>s+(c.duration_days||0),0);
-                  const msLeft=(m.relative_start||0)*32, msDur=childrenTotal, msWidth=childrenTotal>0?Math.max(32,childrenTotal*32):0;
+                  const msDur = children.length > 0 ? childrenTotal : (m.duration_days || 0);
+                  const msLeft=(m.relative_start||0)*32, msWidth=msDur>0?Math.max(32,msDur*32):0;
                   return (<div key={m.id} className="mb-3"><div className="flex items-center mb-0.5 py-0.5">
                     <span className="text-xs font-bold text-amber-700 shrink-0 w-64 pl-1 truncate">◆ {m.name}</span>
                     <div className="flex-1 relative h-6">
@@ -297,7 +296,17 @@ export default function TemplateLibrary() {
                         <span className="flex-1 text-sm font-medium text-amber-800 truncate cursor-pointer hover:text-blue-600"
                           onClick={e=>{e.stopPropagation();setEditingTaskNameId(m.id);setEditTaskNameValue(m.name);}} title="点击编辑名称">{m.name}</span>
                       )}
-                      <span className="text-xs text-gray-400 shrink-0 mr-2">{children.reduce((s,c)=>s+(c.duration_days||0),0)}d</span>
+                      {children.length > 0 ? (
+                        <span className="text-xs text-gray-400 shrink-0 mr-2">{children.reduce((s,c)=>s+(c.duration_days||0),0)}d</span>
+                      ) : editingDurationId===m.id ? (
+                        <input type="number" min={0} className="w-14 px-1 text-xs outline-none bg-white border border-amber-300 rounded text-center shrink-0"
+                          value={editDurationValue} onChange={e=>setEditDurationValue(e.target.value)}
+                          onBlur={()=>handleDurationSave(m)} onKeyDown={e=>{if(e.key==='Enter')e.target.blur();if(e.key==='Escape')setEditingDurationId(null);}}
+                          autoFocus onClick={e=>e.stopPropagation()}/>
+                      ) : (
+                        <span className="text-xs text-gray-400 cursor-pointer hover:text-blue-600 shrink-0 mr-2"
+                          onClick={e=>{e.stopPropagation();setEditingDurationId(m.id);setEditDurationValue(String(m.duration_days||0));}} title="点击编辑工期">{m.duration_days||0}d</span>
+                      )}
                       {children.length>0&&<span className="text-xs text-amber-400 mr-3">· {children.length} 子任务</span>}
                       <span className="text-xs bg-amber-100 text-amber-600 px-1.5 rounded mr-2">阶段</span>
                       <div className="relative shrink-0 mr-1">

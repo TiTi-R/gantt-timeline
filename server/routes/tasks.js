@@ -79,10 +79,9 @@ router.patch('/tasks/:taskId', validate(schemas.taskUpdate), (req, res) => {
     values.push(daysBetween(req.body.start_date, req.body.end_date));
   }
 
-  if (!sets.length) return res.json(existing);
-
-  sets.push("updated_at = datetime('now')");
-  db.prepare(`UPDATE tasks SET ${sets.join(', ')} WHERE id = ?`).run(...values, req.params.taskId);
+  if (sets.length) {
+    db.prepare(`UPDATE tasks SET ${sets.join(', ')} WHERE id = ?`).run(...values, req.params.taskId);
+  }
 
   // Update resources if provided
   if (req.body.resource_ids !== undefined) {
