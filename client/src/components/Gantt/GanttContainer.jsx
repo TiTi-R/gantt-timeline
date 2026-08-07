@@ -21,6 +21,8 @@ export default function GanttContainer() {
   const [project, setProject] = useState(null);
   const projectRef = useRef(null);
   useEffect(() => { projectRef.current = project; }, [project]);
+  // Prevent onAfterTaskUpdate from firing during loadAll
+  const updatingRef = useRef(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editTask, setEditTask] = useState(null);
@@ -167,6 +169,8 @@ export default function GanttContainer() {
     },
 
     onAfterTaskUpdate: async (taskId, item) => {
+      if (updatingRef.current) return; // skip during programmatic reload
+      updatingRef.current = true;
       try {
         const fmt = (d) => d ? d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0') : '';
         const startVal = fmt(item.start_date);
@@ -210,10 +214,18 @@ export default function GanttContainer() {
           return;
         }
 
+        // If child task with siblings, backend auto-shifts later siblings — reload
+        if (ganttTask && ganttTask.parent) {
+          await updateTask(taskId, { start_date: startVal, end_date: endVal, duration_days: Math.max(1, dur) });
+          await loadAll();
+          return;
+        }
+
         await updateTask(taskId, { start_date: startVal, end_date: endVal, duration_days: Math.max(1, dur) });
         const gt = gantt.getTask(taskId);
         if (gt) { gt.real_end = endVal; gantt.updateTask(taskId); }
       } catch (ex) { console.error(ex); }
+      finally { updatingRef.current = false; }
     },
 
     onBeforeTaskDelete: async (taskId) => {
@@ -267,10 +279,14 @@ export default function GanttContainer() {
       const [p, gd, res] = await Promise.all([getProject(pid), getGanttData(pid), getResources()]);
       setProject(p); setEditingDesc(p.description || '');
       setResources(res || []);
+      updatingRef.current = true;
       loadData(gd);
     } catch (e) {
       setError(e.response?.data?.error || e.message);
-    } finally { setLoading(false); }
+    } finally {
+      updatingRef.current = false;
+      setLoading(false);
+    }
   }, [pid, loadData]);
 
   useEffect(() => { loadAll(); }, [loadAll]);

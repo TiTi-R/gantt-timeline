@@ -83,6 +83,32 @@ router.patch('/tasks/:taskId', validate(schemas.taskUpdate), (req, res) => {
     db.prepare(`UPDATE tasks SET ${sets.join(', ')} WHERE id = ?`).run(...values, req.params.taskId);
   }
 
+  // Auto-chain: if child task's end_date changed, shift later siblings
+  if (existing.parent_id && req.body.end_date) {
+    const newEnd = (req.body.end_date || existing.end_date).split('T')[0];
+    const oldEnd = existing.end_date;
+    if (newEnd !== oldEnd) {
+      const delta = Math.round((new Date(newEnd + 'T00:00:00') - new Date(oldEnd + 'T00:00:00')) / 86400000);
+      if (delta !== 0) {
+        const siblings = db.prepare(
+          'SELECT * FROM tasks WHERE parent_id = ? AND sort_order > ? ORDER BY sort_order'
+        ).all(existing.parent_id, existing.sort_order);
+
+        const fmt = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        siblings.forEach(sib => {
+          const cs = new Date(sib.start_date + 'T00:00:00');
+          cs.setDate(cs.getDate() + delta);
+          const ce = new Date(sib.end_date + 'T00:00:00');
+          ce.setDate(ce.getDate() + delta);
+          const dur = Math.max(1, Math.round((ce - cs) / 86400000));
+          db.prepare(
+            `UPDATE tasks SET start_date = ?, end_date = ?, duration_days = ?, updated_at = datetime('now') WHERE id = ?`
+          ).run(fmt(cs), fmt(ce), dur, sib.id);
+        });
+      }
+    }
+  }
+
   // Update resources if provided
   if (req.body.resource_ids !== undefined) {
     db.prepare('DELETE FROM task_resources WHERE task_id = ?').run(req.params.taskId);

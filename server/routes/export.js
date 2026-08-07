@@ -66,6 +66,13 @@ const deriveMilestoneDates = (tasks) => {
       }
     }
   });
+
+  // Compute display duration for ALL tasks (inclusive, matching gantt)
+  tasks.forEach(t => {
+    if (t.start_date && t.end_date) {
+      t.duration_days = daysBetweenGap(t.start_date, t.end_date) + 1;
+    }
+  });
 };
 
 const dayOfYear = (dateStr) => {
@@ -74,7 +81,7 @@ const dayOfYear = (dateStr) => {
   return Math.floor((d - yearStart) / 86400000) + 1;
 };
 
-const daysBetween = (a, b) => {
+const daysBetweenGap = (a, b) => {
   return Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000);
 };
 
@@ -191,7 +198,7 @@ router.get('/projects/:id/export/pdf', (req, res) => {
         case 'end_date':
           val = fmtDate(t.end_date); break;
         case 'duration':
-          val = String(t.duration_days || 0); break;
+          val = String(Math.max(0, t.duration_days || 0)); break;
         case 'role':
           val = t.resource_names || ''; break;
         case 'person':
@@ -218,7 +225,7 @@ router.get('/projects/:id/export/pdf', (req, res) => {
     } else {
       const chartStart = allWithDates.reduce((min, t) => t.start_date < min ? t.start_date : min, allWithDates[0].start_date);
       const chartEnd = allWithDates.reduce((max, t) => t.end_date > max ? t.end_date : max, allWithDates[0].end_date);
-      const chartDays = daysBetween(chartStart, chartEnd) + 1;
+      const chartDays = daysBetweenGap(chartStart, chartEnd) + 1;
       const nameWidth = 200;
       const chartLeft = 30 + nameWidth;
       const chartAreaWidth = cols.reduce((s, c) => s + c.width, 0) - nameWidth;
@@ -257,8 +264,8 @@ router.get('/projects/:id/export/pdf', (req, res) => {
         if (!t.start_date || !t.end_date) return;
         if (y + ganttRowH > doc.page.height - 30) { doc.addPage(); y = 30; }
 
-        const offset = daysBetween(chartStart, t.start_date);
-        const dur = daysBetween(t.start_date, t.end_date);
+        const offset = daysBetweenGap(chartStart, t.start_date);
+        const dur = daysBetweenGap(t.start_date, t.end_date);
         const barW = Math.max(1, dur * dayW);
         const barX = chartLeft + offset * dayW;
         const color = ganttBarColor(t);
@@ -275,7 +282,7 @@ router.get('/projects/:id/export/pdf', (req, res) => {
         // Duration label inside bar
         if (barW > 20) {
           doc.fillColor('#fff').fontSize(6).font(f);
-          doc.text(String(t.duration_days || dur) + 'd', barX + 2, y + 3, { width: barW - 4, align: 'center' });
+          doc.text(String(Math.max(0, t.duration_days || dur)) + 'd', barX + 2, y + 3, { width: barW - 4, align: 'center' });
         }
 
         y += ganttRowH;
@@ -344,7 +351,7 @@ router.get('/projects/:id/export/xlsx', async (req, res) => {
       name,
       fmtDate(t.start_date),
       fmtDate(t.end_date),
-      (t.duration_days || 0),
+      Math.max(0, t.duration_days || 0),
       t.resource_names || '',
       t.resource_person_names || '',
       t.notes || '',
@@ -379,7 +386,7 @@ router.get('/projects/:id/export/xlsx', async (req, res) => {
     if (allWithDates.length > 0) {
       const chartStart = allWithDates.reduce((min, t) => t.start_date < min ? t.start_date : min, allWithDates[0].start_date);
       const chartEnd = allWithDates.reduce((max, t) => t.end_date > max ? t.end_date : max, allWithDates[0].end_date);
-      const chartDays = daysBetween(chartStart, chartEnd) + 1;
+      const chartDays = daysBetweenGap(chartStart, chartEnd) + 1;
       const sDate = new Date(chartStart + 'T00:00:00');
 
       // Row 1: Month headers
@@ -423,8 +430,8 @@ router.get('/projects/:id/export/xlsx', async (req, res) => {
       // Task rows
       sorted.forEach(t => {
         if (!t.start_date || !t.end_date) return;
-        const offset = daysBetween(chartStart, t.start_date);
-        const dur = daysBetween(t.start_date, t.end_date);
+        const offset = daysBetweenGap(chartStart, t.start_date);
+        const dur = daysBetweenGap(t.start_date, t.end_date);
         const color = ganttBarColor(t);
         const argbColor = color.replace('#', 'FF').toUpperCase();
 
