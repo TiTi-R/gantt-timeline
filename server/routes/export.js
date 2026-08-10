@@ -277,7 +277,7 @@ router.get('/projects/:id/export/pdf', (req, res) => {
         if (y + ganttRowH > doc.page.height - 30) { doc.addPage(); y = 30; }
 
         const offset = daysBetweenGap(chartStart, t.start_date);
-        const dur = daysBetweenGap(t.start_date, t.end_date);
+        const dur = daysBetweenGap(t.start_date, t.end_date) + 1;
         const barW = Math.max(1, dur * dayW);
         const barX = chartLeft + offset * dayW;
         const color = ganttBarColor(t);
@@ -443,7 +443,7 @@ router.get('/projects/:id/export/xlsx', async (req, res) => {
       sorted.forEach(t => {
         if (!t.start_date || !t.end_date) return;
         const offset = daysBetweenGap(chartStart, t.start_date);
-        const dur = daysBetweenGap(t.start_date, t.end_date);
+        const dur = daysBetweenGap(t.start_date, t.end_date) + 1;
         const color = ganttBarColor(t);
         const argbColor = color.replace('#', 'FF').toUpperCase();
 
