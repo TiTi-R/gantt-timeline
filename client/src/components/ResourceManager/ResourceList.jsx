@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { getResources, createResource, updateResource, deleteResource } from '../../services/api.js';
 
 export default function ResourceList() {
-  const { t } = useTranslation();
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
@@ -116,14 +114,14 @@ export default function ResourceList() {
     return 0;
   });
 
-  if (loading) return <div className="flex items-center justify-center h-full text-gray-400 animate-pulse">{t('loading')}</div>;
+  if (loading) return <div className="flex items-center justify-center h-full text-gray-400 animate-pulse">加载中...</div>;
 
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-gray-800">{t('resources')}</h2>
+        <h2 className="text-xl font-bold text-gray-800">资源</h2>
         <button onClick={() => setShowNew(true)} className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
-          + {t('resource.new')}
+          + 新建资源
         </button>
       </div>
 
@@ -163,9 +161,9 @@ export default function ResourceList() {
           </div>
           <div className="flex gap-2">
             <button onClick={handleCreate} disabled={!form.role.trim() || form.tags.length === 0}
-              className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50">{t('create')}</button>
+              className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50">新建</button>
             <button onClick={() => { setShowNew(false); setForm({ role: '', tagInput: '', tags: [], color: '#4A90D9' }); }}
-              className="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200">{t('cancel')}</button>
+              className="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200">取消</button>
           </div>
         </div>
       )}
@@ -179,7 +177,7 @@ export default function ResourceList() {
                 onClick={() => handleSort('role')}>角色{sortIndicator('role')}</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600 cursor-pointer hover:text-blue-600 select-none"
                 onClick={() => handleSort('count')}>负责人{sortIndicator('count')}</th>
-              <th className="text-right px-4 py-3 font-medium text-gray-600 w-20">{t('actions')}</th>
+              <th className="text-right px-4 py-3 font-medium text-gray-600 w-20">操作</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -225,13 +223,13 @@ export default function ResourceList() {
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button onClick={() => handleDelete(r.id)} className="text-red-500 hover:text-red-700 text-xs">{t('delete')}</button>
+                    <button onClick={() => handleDelete(r.id)} className="text-red-500 hover:text-red-700 text-xs">删除</button>
                   </td>
                 </tr>
               );
             })}
             {resources.length === 0 && (
-              <tr><td colSpan={3} className="px-4 py-12 text-center text-gray-400">{t('noData')}</td></tr>
+              <tr><td colSpan={3} className="px-4 py-12 text-center text-gray-400">暂无数据</td></tr>
             )}
           </tbody>
         </table>

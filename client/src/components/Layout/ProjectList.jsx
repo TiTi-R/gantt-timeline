@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+
 import { getProjects, createProject, deleteProject } from '../../services/api.js';
 
 export default function ProjectList() {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -54,14 +53,14 @@ export default function ProjectList() {
       });
       navigate(`/project/${project.id}/gantt`);
     } catch (e) {
-      alert(t('error') + ': ' + (e.response?.data?.error || e.message));
+      alert('错误: ' + (e.response?.data?.error || e.message));
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!confirm(t('project.deleteConfirm'))) return;
+    if (!confirm('确定要删除该项目吗？所有任务和依赖关系将一并删除。')) return;
     try {
       await deleteProject(id);
       loadProjects();
@@ -73,7 +72,7 @@ export default function ProjectList() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-gray-400 animate-pulse">{t('loading')}</div>
+        <div className="text-gray-400 animate-pulse">加载中...</div>
       </div>
     );
   }
@@ -81,12 +80,12 @@ export default function ProjectList() {
   return (
     <div className="max-w-5xl mx-auto p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-gray-800">{t('projects')}</h2>
+        <h2 className="text-xl font-bold text-gray-800">项目</h2>
         <button
           onClick={() => setShowNew(!showNew)}
           className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
         >
-          {showNew ? '✕ ' + t('close') : '+ ' + t('project.new')}
+          {showNew ? '✕ 关闭' : '+ 新建项目'}
         </button>
       </div>
 
@@ -100,10 +99,10 @@ export default function ProjectList() {
       {/* New Project Form */}
       {showNew && (
         <form onSubmit={handleCreate} className="bg-white border border-gray-200 rounded-xl p-6 mb-6 shadow-sm">
-          <h3 className="font-semibold text-gray-800 mb-4">{t('project.new')}</h3>
+          <h3 className="font-semibold text-gray-800 mb-4">新建项目</h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">{t('name')} *</label>
+              <label className="block text-sm font-medium text-gray-600 mb-1">名称 *</label>
               <input required
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 value={form.name}
@@ -112,7 +111,7 @@ export default function ProjectList() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">{t('studyId')}</label>
+              <label className="block text-sm font-medium text-gray-600 mb-1">研究编号</label>
               <input
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-blue-300 outline-none"
                 value={form.study_id}
@@ -121,7 +120,7 @@ export default function ProjectList() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">{t('indication')}</label>
+              <label className="block text-sm font-medium text-gray-600 mb-1">适应症</label>
               <input
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-blue-300 outline-none"
                 value={form.indication}
@@ -137,7 +136,7 @@ export default function ProjectList() {
             </div>
           </div>
           <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-600 mb-1">{t('description')}</label>
+            <label className="block text-sm font-medium text-gray-600 mb-1">描述</label>
             <textarea rows={2}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-blue-300 outline-none"
               value={form.description}
@@ -148,11 +147,11 @@ export default function ProjectList() {
           <div className="flex gap-2 mt-4">
             <button type="submit" disabled={saving || !form.name.trim()}
               className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
-              {saving ? t('loading') : t('create')}
+              {saving ? '加载中...' : '新建'}
             </button>
             <button type="button" onClick={() => setShowNew(false)}
               className="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200">
-              {t('cancel')}
+              取消
             </button>
           </div>
         </form>
@@ -162,10 +161,10 @@ export default function ProjectList() {
       {projects.length === 0 && !showNew ? (
         <div className="text-center py-20 text-gray-400">
           <p className="text-4xl mb-3">📭</p>
-          <p className="text-lg font-medium">{t('project.noProjects')}</p>
+          <p className="text-lg font-medium">暂无项目。请创建您的第一个临床试验时间表。</p>
           <button onClick={() => setShowNew(true)}
             className="mt-4 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
-            + {t('project.new')}
+            + 新建项目
           </button>
         </div>
       ) : (
@@ -173,11 +172,11 @@ export default function ProjectList() {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('name')}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('studyId')}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('indication')}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('startDate')}</th>
-                <th className="text-right px-4 py-3 font-medium text-gray-600">{t('actions')}</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">名称</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">研究编号</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">适应症</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">开始日期</th>
+                <th className="text-right px-4 py-3 font-medium text-gray-600">操作</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -189,7 +188,7 @@ export default function ProjectList() {
                   <td className="px-4 py-3 text-gray-500">{p.task_count > 0 ? p.start_date : 'NA'}</td>
                   <td className="px-4 py-3 text-right" onClick={e => e.stopPropagation()}>
                     <button onClick={() => handleDelete(p.id)} className="text-red-500 hover:text-red-700 text-xs font-medium">
-                      {t('delete')}
+删除
                     </button>
                   </td>
                 </tr>

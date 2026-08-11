@@ -9,12 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "dhtmlx-gantt": "^9.0.0",
     "axios": "^1.7.0",
-    "i18next": "^24.0.0",
+    "dhtmlx-gantt": "^9.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-i18next": "^15.0.0",
     "react-router-dom": "^7.0.0"
   },
   "devDependencies": {

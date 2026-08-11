@@ -1,8 +1,6 @@
-import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
 export default function Header() {
-  const { t } = useTranslation();
   const navigate = useNavigate();
 
   return (
@@ -12,7 +10,7 @@ export default function Header() {
           onClick={() => navigate('/')}
           className="text-sm text-blue-600 hover:text-blue-800 font-medium"
         >
-          ← {t('projects')}
+          ← 项目
         </button>
       </div>
     </header>

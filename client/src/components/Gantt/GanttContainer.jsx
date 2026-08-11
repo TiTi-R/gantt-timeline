@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { gantt } from 'dhtmlx-gantt';
 import { useGantt } from '../../hooks/useGantt.js';
 import {
@@ -15,7 +14,6 @@ import TaskEditModal from '../TaskEditor/TaskEditModal.jsx';
 export default function GanttContainer() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { t } = useTranslation();
   const pid = Number(id);
 
   const [project, setProject] = useState(null);
@@ -143,10 +141,10 @@ export default function GanttContainer() {
   //  Gantt hook
   // -----------------------------------------------------------
   const { loadData, getGantt } = useGantt('gantt-chart', {
-    taskLabel: t('gantt:task'),
-    startLabel: t('gantt:start'),
-    endLabel: t('gantt:end'),
-    durationLabel: t('gantt:duration'),
+    taskLabel: '任务',
+    startLabel: '开始',
+    endLabel: '结束',
+    durationLabel: '工期',
 
     onTaskDblClick: (taskId) => {
       const g = getGantt();
@@ -229,7 +227,7 @@ export default function GanttContainer() {
     },
 
     onBeforeTaskDelete: async (taskId) => {
-      if (!confirm(t('task.deleteConfirm'))) return false;
+      if (!confirm('确定删除此任务及其所有子任务吗？')) return false;
       try { await deleteTask(taskId); return true; }
       catch (e) { alert(e.message); return false; }
     },
@@ -625,7 +623,7 @@ export default function GanttContainer() {
         )}
         {loading && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80">
-            <div className="text-gray-400 animate-pulse text-lg">{t('loading')}</div>
+            <div className="text-gray-400 animate-pulse text-lg">加载中...</div>
           </div>
         )}
         {error && !loading && (
@@ -633,7 +631,7 @@ export default function GanttContainer() {
             <p className="text-red-500">❌ {error}</p>
             <div className="flex gap-2">
               <button onClick={loadAll} className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">重试</button>
-              <button onClick={() => navigate('/')} className="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200">← {t('back')}</button>
+              <button onClick={() => navigate('/')} className="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200">← 返回</button>
             </div>
           </div>
         )}
@@ -750,10 +748,10 @@ export default function GanttContainer() {
             <div className="flex gap-2 mt-4">
               <button onClick={handleSaveTpl} disabled={savingTpl || !tplName.trim()}
                 className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:opacity-50">
-                {savingTpl ? t('loading') : t('save')}
+                {savingTpl ? '加载中...' : '保存'}
               </button>
               <button onClick={() => setSaveTplModal(false)}
-                className="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200">{t('cancel')}</button>
+                className="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200">取消</button>
             </div>
           </div>
         </div>
@@ -795,10 +793,10 @@ export default function GanttContainer() {
             <div className="flex gap-2 mt-5">
               <button onClick={handleImport} disabled={importing || !importId}
                 className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50">
-                {importing ? t('loading') : t('import')}
+                {importing ? '加载中...' : '导入'}
               </button>
               <button onClick={() => setImportModal(false)}
-                className="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200">{t('cancel')}</button>
+                className="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200">取消</button>
             </div>
           </div>
         </div>

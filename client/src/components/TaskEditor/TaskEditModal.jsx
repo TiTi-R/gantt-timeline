@@ -1,9 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 import { createTask, updateTask } from '../../services/api.js';
 
 export default function TaskEditModal({ projectId, task, onClose, onSaved }) {
-  const { t } = useTranslation();
   const isNew = !task?.id;
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({

@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { getProject, getPhases } from '../../services/api.js';
 
 export default function TaskTable() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { t } = useTranslation();
   const [project, setProject] = useState(null);
   const [phases, setPhases] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +35,7 @@ export default function TaskTable() {
   });
 
   if (loading) return (
-    <div className="flex items-center justify-center h-full text-gray-400 animate-pulse">{t('loading')}</div>
+    <div className="flex items-center justify-center h-full text-gray-400 animate-pulse">加载中...</div>
   );
 
   return (
@@ -49,7 +47,7 @@ export default function TaskTable() {
             className="text-sm text-blue-600 hover:text-blue-800">
             ← Gantt View
           </button>
-          <input className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm w-56" placeholder={t('search')}
+          <input className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm w-56" placeholder="搜索"
             value={search} onChange={e => setSearch(e.target.value)} />
           <select className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
             value={phaseFilter} onChange={e => setPhaseFilter(e.target.value)}>
@@ -66,12 +64,12 @@ export default function TaskTable() {
           <thead className="sticky top-0 bg-gray-50">
             <tr className="border-b border-gray-200">
               <th className="text-left px-4 py-2.5 font-medium text-gray-600">WBS</th>
-              <th className="text-left px-4 py-2.5 font-medium text-gray-600">{t('name')}</th>
-              <th className="text-left px-4 py-2.5 font-medium text-gray-600">{t('task.phase')}</th>
-              <th className="text-left px-4 py-2.5 font-medium text-gray-600">{t('startDate')}</th>
-              <th className="text-left px-4 py-2.5 font-medium text-gray-600">{t('endDate')}</th>
-              <th className="text-center px-4 py-2.5 font-medium text-gray-600">{t('duration')}</th>
-              <th className="text-center px-4 py-2.5 font-medium text-gray-600">{t('task.progress')}</th>
+              <th className="text-left px-4 py-2.5 font-medium text-gray-600">名称</th>
+              <th className="text-left px-4 py-2.5 font-medium text-gray-600">阶段</th>
+              <th className="text-left px-4 py-2.5 font-medium text-gray-600">开始日期</th>
+              <th className="text-left px-4 py-2.5 font-medium text-gray-600">结束日期</th>
+              <th className="text-center px-4 py-2.5 font-medium text-gray-600">工期</th>
+              <th className="text-center px-4 py-2.5 font-medium text-gray-600">进度</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -111,7 +109,7 @@ export default function TaskTable() {
               );
             })}
             {filtered.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-16 text-center text-gray-400">{t('noData')}</td></tr>
+              <tr><td colSpan={7} className="px-4 py-16 text-center text-gray-400">暂无数据</td></tr>
             )}
           </tbody>
         </table>

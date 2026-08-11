@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import {
   getTemplates, getTemplate, createTemplate, deleteTemplate, updateTemplate, getProjects,
   addTemplateTask, updateTemplateTask, deleteTemplateTask, reorderTemplateTasks, publishTemplate,
@@ -9,7 +8,6 @@ import {
 
 // ──────────────────────────────────────────────────────────────
 export default function TemplateLibrary() {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const [templates, setTemplates] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -157,7 +155,7 @@ export default function TemplateLibrary() {
       <div className="flex flex-col h-full">
         <div className="px-6 py-3 bg-white border-b border-gray-200 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <button onClick={()=>{setEditingTemplate(null);loadData();}} className="text-sm text-blue-600 hover:text-blue-800 shrink-0">← {t('back')}</button>
+            <button onClick={()=>{setEditingTemplate(null);loadData();}} className="text-sm text-blue-600 hover:text-blue-800 shrink-0">← 返回</button>
             {editingName?(
               <input className="border-b-2 border-blue-500 px-1 py-0.5 text-sm font-semibold text-gray-800 outline-none bg-transparent" value={editNameValue}
                 onChange={e=>setEditNameValue(e.target.value)}
@@ -171,7 +169,7 @@ export default function TemplateLibrary() {
               {milestones.length} 阶段 · {tasks.filter(t=>t.task_type!=='milestone'&&t.parent_id).length + orphans.length} 子任务
             </span>
           </div>
-          <button onClick={()=>handleDelete(editingTemplate.id)} className="px-3 py-1.5 text-red-500 text-xs rounded-md hover:bg-red-50">{t('delete')}</button>
+          <button onClick={()=>handleDelete(editingTemplate.id)} className="px-3 py-1.5 text-red-500 text-xs rounded-md hover:bg-red-50">删除</button>
         </div>
 
         {/* Notes/备注行 */}
@@ -473,7 +471,7 @@ export default function TemplateLibrary() {
   }
 
   // ── MAIN LIST ──────────────────────────────────────────────
-  if(loading) return <div className="flex items-center justify-center h-full text-gray-400 animate-pulse">{t('loading')}</div>;
+  if(loading) return <div className="flex items-center justify-center h-full text-gray-400 animate-pulse">加载中...</div>;
   return (
     <div className="max-w-5xl mx-auto p-6">
       <div className="flex items-center justify-between mb-6">
@@ -486,11 +484,11 @@ export default function TemplateLibrary() {
           <form onSubmit={handleCreate} className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6" onClick={e=>e.stopPropagation()}>
             <h3 className="font-semibold text-gray-800 text-lg mb-4">创建模板</h3>
             <div className="space-y-3">
-              <div><label className="block text-sm font-medium text-gray-600 mb-1">{t('name')} *</label><input className="w-full border rounded-lg px-3 py-2 text-sm" required autoFocus value={createForm.name} onChange={e=>setCreateForm({...createForm,name:e.target.value})} placeholder="如: IMM2510-003 标准模板"/></div>
+              <div><label className="block text-sm font-medium text-gray-600 mb-1">名称 *</label><input className="w-full border rounded-lg px-3 py-2 text-sm" required autoFocus value={createForm.name} onChange={e=>setCreateForm({...createForm,name:e.target.value})} placeholder="如: IMM2510-003 标准模板"/></div>
               <div><label className="block text-sm font-medium text-gray-600 mb-1">从项目导入 (可选)</label><select className="w-full border rounded-lg px-3 py-2 text-sm" value={createForm.source_id} onChange={e=>setCreateForm({...createForm,source_id:e.target.value})}><option value="">-- 空白模板（手动编辑） --</option>{projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
-              <div><label className="block text-sm font-medium text-gray-600 mb-1">{t('description')}</label><textarea rows={2} className="w-full border rounded-lg px-3 py-2 text-sm" value={createForm.description} onChange={e=>setCreateForm({...createForm,description:e.target.value})} placeholder="描述此模板的用途..."/></div>
+              <div><label className="block text-sm font-medium text-gray-600 mb-1">描述</label><textarea rows={2} className="w-full border rounded-lg px-3 py-2 text-sm" value={createForm.description} onChange={e=>setCreateForm({...createForm,description:e.target.value})} placeholder="描述此模板的用途..."/></div>
             </div>
-            <div className="flex gap-2 mt-5"><button type="submit" disabled={creating||!createForm.name.trim()} className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 disabled:opacity-50">{creating?t('loading'):t('create')}</button><button type="button" onClick={()=>setCreateModal(false)} className="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200">{t('cancel')}</button></div>
+            <div className="flex gap-2 mt-5"><button type="submit" disabled={creating||!createForm.name.trim()} className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 disabled:opacity-50">{creating?'加载中...':'新建'}</button><button type="button" onClick={()=>setCreateModal(false)} className="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200">取消</button></div>
           </form>
         </div>
       )}
@@ -504,7 +502,7 @@ export default function TemplateLibrary() {
               <div className="flex items-center gap-4 text-xs text-gray-500 mb-4"><span>📌 {tmpl.milestone_count||0} 阶段 · {tmpl.task_count-(tmpl.milestone_count||0)} 子任务</span>{tmpl.total_duration>0&&<span>📅 {tmpl.total_duration} 天</span>}</div>
               <div className="flex gap-2">
                 <button onClick={async()=>{await openTemplate(tmpl.id).catch(()=>{});}} className="px-3 py-1.5 bg-gray-100 text-gray-700 text-xs rounded-md hover:bg-gray-200 font-medium">✏️ 编辑</button>
-                <button onClick={()=>handleDelete(tmpl.id)} className="px-3 py-1.5 text-red-500 text-xs rounded-md hover:bg-red-50">{t('delete')}</button>
+                <button onClick={()=>handleDelete(tmpl.id)} className="px-3 py-1.5 text-red-500 text-xs rounded-md hover:bg-red-50">删除</button>
               </div>
             </div>
           ))}
